@@ -15,7 +15,8 @@ return [
      * When the clean command is executed, all recording activities older than
      * the number of days specified here will be deleted.
      */
-    'clean_after_days' => 365,
+    // BIR requires sales records to be kept for 10 years; never prune sooner.
+    'clean_after_days' => 3650,
 
     /*
      * If no log name is passed to the activity() helper
