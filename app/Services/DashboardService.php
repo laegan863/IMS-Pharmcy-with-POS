@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\Permission;
 use App\Models\User;
-use App\Services\Stock\StockService;
 use App\Support\Decimal;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
@@ -17,8 +16,6 @@ use Illuminate\Support\Facades\DB;
  */
 class DashboardService
 {
-    public function __construct(private StockService $stock) {}
-
     /**
      * @return array<string, mixed>
      */
@@ -76,21 +73,30 @@ class DashboardService
             'value' => Decimal::round((string) (clone $expired)->sum(DB::raw('stock_balances.quantity * batches.unit_cost'))),
         ];
 
+        // One grouped query for sellable stock rather than one per product.
+        $sellable = DB::table('stock_balances')
+            ->join('batches', 'batches.id', '=', 'stock_balances.batch_id')
+            ->where('stock_balances.branch_id', $branchId)
+            ->where('batches.status', 'active')
+            ->whereDate('batches.expires_on', '>=', $today->toDateString())
+            ->groupBy('stock_balances.product_id')
+            ->selectRaw('stock_balances.product_id, SUM(stock_balances.quantity) as quantity');
+
         $data['low_stock'] = DB::table('products')
             ->join('generic_names', 'generic_names.id', '=', 'products.generic_name_id')
+            ->leftJoinSub($sellable, 'sellable', 'sellable.product_id', '=', 'products.id')
             ->where('products.is_active', true)
             ->where('products.reorder_point', '>', 0)
-            ->get(['products.id', 'products.brand_name', 'products.reorder_point', 'generic_names.name as generic'])
+            ->whereRaw('COALESCE(sellable.quantity, 0) <= products.reorder_point')
+            ->orderByRaw('COALESCE(sellable.quantity, 0)')
+            ->limit(8)
+            ->get(['products.id', 'products.brand_name', 'products.reorder_point', 'generic_names.name as generic', DB::raw('COALESCE(sellable.quantity, 0) as on_hand')])
             ->map(fn ($row) => [
                 'product_id' => (int) $row->id,
                 'name' => $row->brand_name ? "{$row->brand_name} ({$row->generic})" : $row->generic,
-                'on_hand' => $this->stock->sellableOnHand($branchId, (int) $row->id),
+                'on_hand' => (int) $row->on_hand,
                 'reorder_point' => (int) $row->reorder_point,
-            ])
-            ->filter(fn (array $row) => $row['on_hand'] <= $row['reorder_point'])
-            ->sortBy('on_hand')
-            ->take(8)
-            ->values();
+            ]);
 
         $data['pending'] = array_filter([
             'purchase_orders_to_approve' => $user->can(Permission::PurchaseOrdersApprove->value)
