@@ -91,6 +91,7 @@ class ProductUnit extends Model
         return [
             ['purchase_order_lines', 'product_unit_id'],
             ['goods_receipt_lines', 'product_unit_id'],
+            ['sale_lines', 'product_unit_id'],
         ];
     }
 

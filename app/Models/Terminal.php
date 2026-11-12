@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $machine_identification_number
  * @property string|null $permit_to_use_number
  * @property string|null $serial_number
+ * @property string $grand_total Accumulated sales since the terminal went into service; never reset.
+ * @property int $z_counter
  * @property bool $is_active
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -39,6 +41,8 @@ class Terminal extends Model
     {
         return [
             'is_active' => 'boolean',
+            'grand_total' => 'decimal:2',
+            'z_counter' => 'integer',
         ];
     }
 }

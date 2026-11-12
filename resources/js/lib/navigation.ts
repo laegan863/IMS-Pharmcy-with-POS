@@ -5,6 +5,9 @@ import {
     Building2,
     ClipboardList,
     ContactRound,
+    FileText,
+    ReceiptText,
+    ShoppingCart,
     PackageCheck,
     Undo2,
     LayoutGrid,
@@ -30,6 +33,9 @@ import { index as purchaseOrders } from '@/routes/purchasing/orders';
 import { index as receipts } from '@/routes/purchasing/receipts';
 import { index as supplierReturns } from '@/routes/purchasing/returns';
 import { index as stock } from '@/routes/stock';
+import { screen as pos } from '@/routes/pos';
+import { index as readings } from '@/routes/pos/readings';
+import { index as sales } from '@/routes/pos/sales';
 
 export type AppNavItem = {
     title: string;
@@ -52,6 +58,29 @@ export const navigation: AppNavSection[] = [
     {
         title: 'Overview',
         items: [{ title: 'Dashboard', href: dashboard(), icon: LayoutGrid }],
+    },
+    {
+        title: 'Sales',
+        items: [
+            {
+                title: 'POS',
+                href: pos(),
+                icon: ShoppingCart,
+                permission: 'pos.sell',
+            },
+            {
+                title: 'Invoices',
+                href: sales(),
+                icon: ReceiptText,
+                permission: 'pos.sell',
+            },
+            {
+                title: 'Z-readings',
+                href: readings(),
+                icon: FileText,
+                permission: 'pos.readings',
+            },
+        ],
     },
     {
         title: 'Inventory',

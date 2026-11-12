@@ -3,13 +3,18 @@
 namespace Database\Seeders;
 
 use App\Enums\ProductClassification;
+use App\Enums\StockMovementType;
 use App\Enums\TaxClass;
+use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\DosageForm;
 use App\Models\Prescriber;
+use App\Models\Product;
 use App\Models\Supplier;
 use App\Services\Catalog\ProductService;
+use App\Services\Stock\StockService;
+use App\Support\Decimal;
 use Illuminate\Database\Seeder;
 
 /**
@@ -65,6 +70,19 @@ class DemoCatalogSeeder extends Seeder
                 fn (array $unit) => $unit[3] ? ['code' => $unit[3], 'unit' => $unit[0]] : null,
                 $units,
             ))), true);
+        }
+
+        // Opening stock in every branch: two batches per product, the earlier
+        // one expiring in four months so expiry alerts have something to show.
+        $stock = app(StockService::class);
+
+        foreach (Branch::query()->pluck('id') as $branchId) {
+            foreach (Product::query()->with('units')->get() as $product) {
+                $base = $product->units->firstWhere('is_base', true);
+                $cost = Decimal::mul((string) $base?->price, '0.7', Decimal::COST);
+                $stock->receive($branchId, $product, 'DEMO-A', now()->addMonths(4)->toDateString(), 40, $cost, StockMovementType::Opening, reference: 'OPENING');
+                $stock->receive($branchId, $product, 'DEMO-B', now()->addMonths(20)->toDateString(), 160, $cost, StockMovementType::Opening, reference: 'OPENING');
+            }
         }
 
         Supplier::factory()->create(['code' => 'ZUEL', 'name' => 'Zuellig Pharma Corporation', 'payment_terms_days' => 30]);
