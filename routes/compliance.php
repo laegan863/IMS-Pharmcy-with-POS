@@ -16,6 +16,7 @@ Route::middleware(['auth', 'verified', 'two-factor.required'])->group(function (
         Route::post('/', [PrescriptionController::class, 'quickStore'])->name('store');
         Route::get('alternatives', [PrescriptionController::class, 'alternatives'])->name('alternatives');
         Route::get('prescribers', [PrescriberController::class, 'lookup'])->name('prescribers');
+        Route::post('prescribers', [PrescriberController::class, 'quickStore'])->name('prescribers.store');
     });
 
     Route::middleware('can:'.Permission::PrescriptionsManage->value)

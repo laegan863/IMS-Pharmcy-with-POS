@@ -75,6 +75,18 @@ export function PrescriptionDialog({
             .then((result) => setLines(result.data));
     }, [open, productId]);
 
+    // What still blocks saving, shown under the form so the button never
+    // looks dead without a reason.
+    const missing = [
+        !form.patient_name.trim() && 'enter the patient name',
+        !prescriber && 'pick the prescriber from the list (or add them)',
+        !(Number(form.quantity_prescribed_base) > 0) &&
+            'enter the quantity prescribed',
+        dangerous &&
+            !form.special_form_serial.trim() &&
+            'enter the special form serial no.',
+    ].filter((reason): reason is string => Boolean(reason));
+
     const save = async () => {
         setError(null);
 
@@ -258,6 +270,11 @@ export function PrescriptionDialog({
                         {error && (
                             <p className="text-sm text-destructive">{error}</p>
                         )}
+                        {missing.length > 0 && (
+                            <p className="text-sm text-muted-foreground">
+                                To save: {missing.join(', ')}.
+                            </p>
+                        )}
                         <DialogFooter>
                             <Button
                                 variant="ghost"
@@ -267,7 +284,7 @@ export function PrescriptionDialog({
                             </Button>
                             <Button
                                 onClick={() => void save()}
-                                disabled={!prescriber || !form.patient_name}
+                                disabled={missing.length > 0}
                             >
                                 Save and use
                             </Button>

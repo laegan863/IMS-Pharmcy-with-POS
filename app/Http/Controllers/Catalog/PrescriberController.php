@@ -47,6 +47,23 @@ class PrescriberController extends Controller
         ]);
     }
 
+    /**
+     * Adds a prescriber from the POS prescription dialog when the doctor is
+     * not on file yet. Only name and PRC number; the rest can be completed
+     * later on the Prescribers page.
+     */
+    public function quickStore(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'prc_license_number' => ['nullable', 'string', 'max:30', Rule::unique('prescribers', 'prc_license_number')],
+        ], [], ['prc_license_number' => 'PRC licence number']);
+
+        $prescriber = Prescriber::create([...$data, 'is_active' => true]);
+
+        return response()->json(['data' => $prescriber->only(['id', 'name', 'prc_license_number', 's2_license_number'])], 201);
+    }
+
     public function create(): Response
     {
         return Inertia::render('catalog/prescribers/form', ['prescriber' => null]);
