@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -26,9 +27,13 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
+            'username' => fake()->unique()->userName(),
+            'branch_id' => Branch::factory(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'is_active' => true,
+            'supervisor_pin' => null,
             'remember_token' => Str::random(10),
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
@@ -43,6 +48,36 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Indicate that the user has no home branch.
+     */
+    public function withoutBranch(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'branch_id' => null,
+        ]);
+    }
+
+    /**
+     * Indicate that the user is deactivated.
+     */
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_active' => false,
+        ]);
+    }
+
+    /**
+     * Indicate that the user can approve voids, refunds and price overrides.
+     */
+    public function withSupervisorPin(string $pin = '1234'): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'supervisor_pin' => Hash::make($pin),
         ]);
     }
 

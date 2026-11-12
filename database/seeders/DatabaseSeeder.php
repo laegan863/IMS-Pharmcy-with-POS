@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Branch;
+use App\Models\Terminal;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -15,10 +17,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $branch = Branch::factory()->create([
+            'code' => 'MAIN',
+            'name' => 'Main Branch',
+        ]);
 
-        User::factory()->create([
+        Terminal::factory()->for($branch)->create([
+            'code' => 'POS-01',
+            'name' => 'Counter 1',
+        ]);
+
+        User::factory()->for($branch)->withSupervisorPin()->create([
             'name' => 'Test User',
+            'username' => 'test',
             'email' => 'test@example.com',
         ]);
     }
