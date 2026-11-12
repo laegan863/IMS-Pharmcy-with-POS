@@ -14,7 +14,9 @@ export function useCan(): (permission: string | string[]) => boolean {
 
     return useCallback(
         (permission: string | string[]) => {
-            const wanted = Array.isArray(permission) ? permission : [permission];
+            const wanted = Array.isArray(permission)
+                ? permission
+                : [permission];
 
             return wanted.some((name) => permissions.includes(name));
         },
