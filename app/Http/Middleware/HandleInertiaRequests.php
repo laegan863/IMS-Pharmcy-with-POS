@@ -47,6 +47,7 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $user instanceof User ? $user->getAllPermissions()->pluck('name')->values() : [],
                 'role' => $user instanceof User ? $user->staffRole()?->name : null,
                 'branch' => $user instanceof User ? $user->branch?->only(['id', 'code', 'name']) : null,
+                'completedTours' => $user instanceof User ? ($user->completed_tours ?? []) : [],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

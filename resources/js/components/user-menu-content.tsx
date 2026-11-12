@@ -1,5 +1,6 @@
 import { Link, router } from '@inertiajs/react';
-import { LogOut, Settings } from 'lucide-react';
+import { Compass, LogOut, Settings } from 'lucide-react';
+import { startTour } from '@/components/tour';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -43,6 +44,17 @@ export function UserMenuContent({ user }: Props) {
                         <Settings className="mr-2" />
                         Settings
                     </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    className="cursor-pointer"
+                    onSelect={() => {
+                        cleanup();
+                        // Let the menu close before the tour measures the page.
+                        window.setTimeout(startTour, 150);
+                    }}
+                >
+                    <Compass className="mr-2" />
+                    Take the tour
                 </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

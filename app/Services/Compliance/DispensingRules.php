@@ -18,7 +18,7 @@ use Illuminate\Validation\ValidationException;
  *  - Rx items need a recorded prescription line with enough balance left
  *    (partial fills are allowed). A generic equivalent may fill it.
  *  - Dangerous drugs (S2) also need the special prescription form serial,
- *    an S2 prescriber and a pharmacist: the cashier must hold the
+ *    the prescriber's S2 number and a pharmacist: the cashier must hold the
  *    dangerous-drugs.dispense permission or a pharmacist approves with PIN.
  *    Each dispensing is written to the dangerous drug register.
  */

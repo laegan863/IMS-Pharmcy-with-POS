@@ -25,6 +25,8 @@ export type Auth = {
     permissions: string[];
     role: Role | null;
     branch: BranchSummary | null;
+    /** Guided tours this user has finished or skipped. */
+    completedTours: string[];
 };
 
 export type Passkey = {

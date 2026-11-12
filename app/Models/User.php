@@ -28,6 +28,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property CarbonImmutable|null $email_verified_at
  * @property string $password
  * @property bool $is_active
+ * @property list<string>|null $completed_tours
  * @property string|null $supervisor_pin
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
@@ -37,7 +38,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property CarbonImmutable|null $updated_at
  */
 #[Fillable(['name', 'username', 'branch_id', 'email', 'password', 'is_active'])]
-#[Hidden(['password', 'supervisor_pin', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[Hidden(['password', 'supervisor_pin', 'completed_tours', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
@@ -109,6 +110,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'completed_tours' => 'array',
             'supervisor_pin' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];

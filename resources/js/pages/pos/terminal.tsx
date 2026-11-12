@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import {
     AlertTriangle,
     BadgePercent,
+    HelpCircle,
     LogOut,
     Minus,
     PauseCircle,
@@ -18,6 +19,7 @@ import { ProductPicker } from '@/components/product-picker';
 import { StatusBadge } from '@/components/status-badge';
 import { SupervisorApprovalDialog } from '@/components/supervisor-approval-dialog';
 import type { Approval } from '@/components/supervisor-approval-dialog';
+import { startTour, Tour } from '@/components/tour';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -31,6 +33,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatMoney } from '@/lib/format';
 import { http, HttpError } from '@/lib/http';
+import { posTour } from '@/lib/tours';
 import { cn } from '@/lib/utils';
 import { dashboard, logout } from '@/routes';
 import { quote as quoteRoute } from '@/routes/pos';
@@ -462,7 +465,19 @@ export default function PosTerminal({
                     <span className="text-muted-foreground">
                         {shift.terminal} · Shift {shift.number}
                     </span>
-                    <div className="ml-auto flex flex-wrap gap-2">
+                    <div
+                        data-tour="pos-actions"
+                        className="ml-auto flex flex-wrap gap-2"
+                    >
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            aria-label="Take the tour"
+                            title="Take the tour"
+                            onClick={startTour}
+                        >
+                            <HelpCircle />
+                        </Button>
                         <Button size="sm" variant="outline" asChild>
                             <Link href={salesIndex()}>
                                 <Receipt /> Invoices
@@ -478,12 +493,14 @@ export default function PosTerminal({
 
                 <div className="grid flex-1 gap-4 overflow-hidden p-4 lg:grid-cols-[1fr_380px]">
                     <section className="flex min-h-0 flex-col gap-3">
-                        <ProductPicker
-                            ref={picker}
-                            onPick={addProduct}
-                            autoFocus
-                            placeholder="Scan barcode or type brand / generic name  (F2)"
-                        />
+                        <div data-tour="pos-search">
+                            <ProductPicker
+                                ref={picker}
+                                onPick={addProduct}
+                                autoFocus
+                                placeholder="Scan barcode or type brand / generic name  (F2)"
+                            />
+                        </div>
 
                         {uncertain && (
                             <div className="flex items-center gap-2 rounded-md border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
@@ -494,7 +511,10 @@ export default function PosTerminal({
                             </div>
                         )}
 
-                        <div className="min-h-0 flex-1 overflow-y-auto rounded-md border bg-background">
+                        <div
+                            data-tour="pos-cart"
+                            className="min-h-0 flex-1 overflow-y-auto rounded-md border bg-background"
+                        >
                             <table className="w-full text-sm">
                                 <thead className="sticky top-0 bg-background text-left text-xs text-muted-foreground">
                                     <tr className="border-b">
@@ -806,7 +826,7 @@ export default function PosTerminal({
                     </section>
 
                     <aside className="flex min-h-0 flex-col gap-3 overflow-y-auto rounded-md border bg-background p-4">
-                        <div className="flex gap-2">
+                        <div data-tour="pos-discount" className="flex gap-2">
                             <Button
                                 variant={
                                     discount.type === 'none'
@@ -879,7 +899,10 @@ export default function PosTerminal({
                                 />
                             )}
                         </dl>
-                        <div className="flex items-baseline justify-between border-t pt-3">
+                        <div
+                            data-tour="pos-totals"
+                            className="flex items-baseline justify-between border-t pt-3"
+                        >
                             <span className="text-sm text-muted-foreground">
                                 Total due
                             </span>
@@ -893,7 +916,10 @@ export default function PosTerminal({
                             </p>
                         )}
 
-                        <div className="space-y-2 border-t pt-3">
+                        <div
+                            data-tour="pos-payment"
+                            className="space-y-2 border-t pt-3"
+                        >
                             {payments.map((payment, index) => (
                                 <div key={index} className="flex gap-2">
                                     <select
@@ -1015,6 +1041,7 @@ export default function PosTerminal({
 
                         <Button
                             size="lg"
+                            data-tour="pos-complete"
                             className="mt-auto h-14 text-lg"
                             disabled={
                                 lines.length === 0 ||
@@ -1201,6 +1228,8 @@ export default function PosTerminal({
                     />
                 </div>
             </SupervisorApprovalDialog>
+
+            <Tour tourKey="pos" steps={posTour} />
         </>
     );
 }

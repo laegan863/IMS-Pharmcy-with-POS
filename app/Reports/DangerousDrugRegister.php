@@ -19,7 +19,7 @@ final class DangerousDrugRegister extends Report
 
     public function description(): string
     {
-        return 'Every receipt and dispensing of S2 drugs with a running balance per product, patient, S2 prescriber, form serial and pharmacist.';
+        return 'Every receipt and dispensing of S2 drugs with a running balance per product, patient, prescriber and S2 number, form serial and pharmacist.';
     }
 
     public function permission(): Permission

@@ -44,7 +44,10 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                 </SidebarMenu>
                 {branch && (
-                    <p className="truncate px-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+                    <p
+                        data-tour="branch"
+                        className="truncate px-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden"
+                    >
                         {branch.name}
                     </p>
                 )}
@@ -52,7 +55,11 @@ export function AppSidebar() {
 
             <SidebarContent>
                 {sections.map((section) => (
-                    <SidebarGroup key={section.title} className="px-2 py-0">
+                    <SidebarGroup
+                        key={section.title}
+                        data-tour={`nav-${section.title.toLowerCase()}`}
+                        className="px-2 py-0"
+                    >
                         <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
                         <SidebarMenu>
                             {section.items.map((item) => (
@@ -76,7 +83,7 @@ export function AppSidebar() {
                 ))}
             </SidebarContent>
 
-            <SidebarFooter>
+            <SidebarFooter data-tour="user-menu">
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
