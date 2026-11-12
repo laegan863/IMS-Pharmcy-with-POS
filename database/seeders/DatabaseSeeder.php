@@ -53,5 +53,9 @@ class DatabaseSeeder extends Seeder
                 'email' => "{$username}@example.com",
             ])->assignRole($role);
         }
+
+        if (app()->environment('local')) {
+            $this->call(DemoCatalogSeeder::class);
+        }
     }
 }

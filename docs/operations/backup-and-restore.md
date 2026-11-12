@@ -16,10 +16,10 @@ unreadable.
 
 ## Where copies go
 
-| Disk | Set by | Purpose |
-| --- | --- | --- |
-| `local` | `storage/app/pharmacy-ims` | Fast restore after a mistake |
-| `offsite` | `BACKUP_OFFSITE_PATH` | Survives theft, fire or a dead disk |
+| Disk      | Set by                     | Purpose                             |
+| --------- | -------------------------- | ----------------------------------- |
+| `local`   | `storage/app/pharmacy-ims` | Fast restore after a mistake        |
+| `offsite` | `BACKUP_OFFSITE_PATH`      | Survives theft, fire or a dead disk |
 
 Point `BACKUP_OFFSITE_PATH` at a folder that leaves the building, such as a
 Google Drive or OneDrive for desktop folder, or a network share, then set
@@ -30,10 +30,10 @@ monthly for 12 months, yearly for 10 years.
 
 ## Schedule
 
-| Time | Task |
-| --- | --- |
-| 01:00 | `backup:clean` removes old backups |
-| 01:30 | `backup:run` makes tonight's backup |
+| Time  | Task                                                                                 |
+| ----- | ------------------------------------------------------------------------------------ |
+| 01:00 | `backup:clean` removes old backups                                                   |
+| 01:30 | `backup:run` makes tonight's backup                                                  |
 | 07:00 | `backup:monitor` emails `BACKUP_NOTIFY_EMAIL` if the newest backup is over a day old |
 
 On Windows, create a Task Scheduler task that runs every minute:
@@ -71,5 +71,5 @@ Do this on a spare machine or a staging copy, never on the live server.
 ## Restore log
 
 | Date | Backup file | Restored by | Result |
-| --- | --- | --- | --- |
-| | | | |
+| ---- | ----------- | ----------- | ------ |
+|      |             |             |        |

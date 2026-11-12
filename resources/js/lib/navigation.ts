@@ -2,9 +2,14 @@ import type { InertiaLinkProps } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
 import {
     Building2,
+    ContactRound,
     LayoutGrid,
+    ListTree,
+    Pill,
     ScrollText,
     SlidersHorizontal,
+    Stethoscope,
+    Truck,
     Users,
 } from 'lucide-react';
 import { dashboard } from '@/routes';
@@ -12,6 +17,11 @@ import { index as auditLog } from '@/routes/admin/audit-log';
 import { index as branches } from '@/routes/admin/branches';
 import { edit as storeSettings } from '@/routes/admin/settings';
 import { index as users } from '@/routes/admin/users';
+import { index as customers } from '@/routes/catalog/customers';
+import { index as lookups } from '@/routes/catalog/lookups';
+import { index as prescribers } from '@/routes/catalog/prescribers';
+import { index as products } from '@/routes/catalog/products';
+import { index as suppliers } from '@/routes/catalog/suppliers';
 
 export type AppNavItem = {
     title: string;
@@ -34,6 +44,41 @@ export const navigation: AppNavSection[] = [
     {
         title: 'Overview',
         items: [{ title: 'Dashboard', href: dashboard(), icon: LayoutGrid }],
+    },
+    {
+        title: 'Catalog',
+        items: [
+            {
+                title: 'Products',
+                href: products(),
+                icon: Pill,
+                permission: 'products.view',
+            },
+            {
+                title: 'Lookups',
+                href: lookups('generic-names'),
+                icon: ListTree,
+                permission: 'products.manage',
+            },
+            {
+                title: 'Suppliers',
+                href: suppliers(),
+                icon: Truck,
+                permission: 'suppliers.manage',
+            },
+            {
+                title: 'Customers',
+                href: customers(),
+                icon: ContactRound,
+                permission: 'customers.manage',
+            },
+            {
+                title: 'Prescribers',
+                href: prescribers(),
+                icon: Stethoscope,
+                permission: 'prescribers.manage',
+            },
+        ],
     },
     {
         title: 'Administration',
