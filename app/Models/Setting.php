@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 
 /**
  * One stored store setting. Read settings through App\Settings\Settings,
@@ -14,8 +14,8 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $key
  * @property mixed $value
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable(['key', 'value'])]
 class Setting extends Model
