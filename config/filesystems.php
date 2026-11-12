@@ -47,6 +47,15 @@ return [
             'report' => false,
         ],
 
+        // Backup copy kept away from the store: a synced cloud folder (Google
+        // Drive or OneDrive for desktop) or a network share.
+        'offsite' => [
+            'driver' => 'local',
+            'root' => env('BACKUP_OFFSITE_PATH', storage_path('app/offsite-backups')),
+            'throw' => true,
+            'report' => true,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

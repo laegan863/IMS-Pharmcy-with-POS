@@ -18,16 +18,19 @@ return [
          * The name of this application. You can use this name to monitor
          * the backups.
          */
-        'name' => env('APP_NAME', 'laravel-backup'),
+        'name' => env('BACKUP_NAME', 'pharmacy-ims'),
 
         'source' => [
             'files' => [
                 /*
                  * The list of directories and files that will be included in the backup.
                  */
+                // Uploaded files (prescription photos, imports) and .env, whose
+                // APP_KEY is needed to read encrypted ID numbers after a restore.
+                // The archive is encrypted with BACKUP_ARCHIVE_PASSWORD.
                 'include' => [
-                    base_path(),
-                    // storage_path(),  // Include if you use zero downtime deployments and don't follow symlinks
+                    storage_path('app'),
+                    base_path('.env'),
                 ],
 
                 /*
@@ -36,9 +39,8 @@ return [
                  * Directories used by the backup process will automatically be excluded.
                  */
                 'exclude' => [
-                    base_path('vendor'),
-                    base_path('node_modules'),
-                    storage_path('framework'),
+                    storage_path('app/backup-temp'),
+                    storage_path('app/offsite-backups'),
                 ],
 
                 /*
@@ -163,9 +165,9 @@ return [
             /*
              * The disk names on which the backups will be stored.
              */
-            'disks' => [
-                'local',
-            ],
+            // "local" keeps a copy on this machine; "offsite" points at a folder
+            // that leaves the building (see BACKUP_OFFSITE_PATH).
+            'disks' => array_values(array_filter(explode(',', (string) env('BACKUP_DISKS', 'local')))),
 
             /*
              * Determines whether to allow backups to continue when some targets fail instead of failing completely.
@@ -198,18 +200,18 @@ return [
          * After creating the zip, verify it can be opened and contains files.
          * Recommended for critical backups but adds a small overhead.
          */
-        'verify_backup' => false,
+        'verify_backup' => true,
 
         /*
          * The number of attempts, in case the backup command encounters an exception
          */
-        'tries' => 1,
+        'tries' => 3,
 
         /*
          * The number of seconds to wait before attempting a new backup if the previous try failed
          * Set to `0` for none
          */
-        'retry_delay' => 0,
+        'retry_delay' => 60,
     ],
 
     /*
@@ -224,9 +226,9 @@ return [
             BackupHasFailedNotification::class => ['mail'],
             UnhealthyBackupWasFoundNotification::class => ['mail'],
             CleanupHasFailedNotification::class => ['mail'],
-            BackupWasSuccessfulNotification::class => ['mail'],
-            HealthyBackupWasFoundNotification::class => ['mail'],
-            CleanupWasSuccessfulNotification::class => ['mail'],
+            BackupWasSuccessfulNotification::class => [],
+            HealthyBackupWasFoundNotification::class => [],
+            CleanupWasSuccessfulNotification::class => [],
         ],
 
         /*
@@ -236,7 +238,7 @@ return [
         'notifiable' => Notifiable::class,
 
         'mail' => [
-            'to' => 'your@example.com',
+            'to' => env('BACKUP_NOTIFY_EMAIL', env('MAIL_FROM_ADDRESS', 'hello@example.com')),
 
             'from' => [
                 'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
@@ -296,7 +298,7 @@ return [
      */
     'monitor_backups' => [
         [
-            'name' => env('APP_NAME', 'laravel-backup'),
+            'name' => env('BACKUP_NAME', 'pharmacy-ims'),
             'disks' => ['local'],
             'health_checks' => [
                 MaximumAgeInDays::class => 1,
@@ -352,13 +354,14 @@ return [
              * After the "keep_weekly_backups_for_weeks" period is over, the most recent backup
              * of that month will be kept. Older backups within the same month will be removed.
              */
-            'keep_monthly_backups_for_months' => 4,
+            'keep_monthly_backups_for_months' => 12,
 
             /*
              * After the "keep_monthly_backups_for_months" period is over, the most recent backup
              * of that year will be kept. Older backups within the same year will be removed.
              */
-            'keep_yearly_backups_for_years' => 2,
+            // Sales records must be kept for 10 years (BIR).
+            'keep_yearly_backups_for_years' => 10,
 
             /*
              * After cleaning up the backups remove the oldest backup until
@@ -371,13 +374,13 @@ return [
         /*
          * The number of attempts, in case the cleanup command encounters an exception
          */
-        'tries' => 1,
+        'tries' => 3,
 
         /*
          * The number of seconds to wait before attempting a new cleanup if the previous try failed
          * Set to `0` for none
          */
-        'retry_delay' => 0,
+        'retry_delay' => 60,
     ],
 
 ];
