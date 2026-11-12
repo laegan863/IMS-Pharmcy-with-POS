@@ -1,7 +1,11 @@
 import type { InertiaLinkProps } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
 import {
+    ArrowLeftRight,
     Boxes,
+    ClipboardCheck,
+    SlidersVertical,
+    Trash,
     Building2,
     ClipboardList,
     ContactRound,
@@ -35,6 +39,9 @@ import { index as purchaseOrders } from '@/routes/purchasing/orders';
 import { index as receipts } from '@/routes/purchasing/receipts';
 import { index as supplierReturns } from '@/routes/purchasing/returns';
 import { index as stock } from '@/routes/stock';
+import { index as adjustments } from '@/routes/stock/adjustments';
+import { index as counts } from '@/routes/stock/counts';
+import { index as transfers } from '@/routes/stock/transfers';
 import { index as prescriptions } from '@/routes/compliance/prescriptions';
 import { index as reports } from '@/routes/reports';
 import { screen as pos } from '@/routes/pos';
@@ -117,6 +124,30 @@ export const navigation: AppNavSection[] = [
                 href: stock(),
                 icon: Boxes,
                 permission: 'stock.view',
+            },
+            {
+                title: 'Adjustments',
+                href: adjustments('adjustment'),
+                icon: SlidersVertical,
+                permission: ['stock.adjust', 'stock.adjust-approve'],
+            },
+            {
+                title: 'Disposals',
+                href: adjustments('disposal'),
+                icon: Trash,
+                permission: ['stock.dispose', 'stock.adjust-approve'],
+            },
+            {
+                title: 'Stock counts',
+                href: counts(),
+                icon: ClipboardCheck,
+                permission: ['stock.count', 'stock.count-approve'],
+            },
+            {
+                title: 'Transfers',
+                href: transfers(),
+                icon: ArrowLeftRight,
+                permission: 'stock.transfer',
             },
         ],
     },

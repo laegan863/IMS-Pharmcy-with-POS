@@ -2,21 +2,26 @@
 
 namespace App\Http\Controllers\Stock;
 
+use App\Enums\Permission;
 use App\Exports\OpeningStockTemplate;
 use App\Http\Controllers\Controller;
 use App\Imports\HeadingRowSheet;
 use App\Models\Batch;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\SaleLineBatch;
 use App\Models\StockBalance;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\Stock\OpeningStockImporter;
+use App\Services\Stock\StockControlService;
 use App\Settings\Settings;
 use App\Support\Decimal;
 use App\Support\TableQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -178,6 +183,65 @@ class StockController extends Controller
                     'user' => $movement->user?->name,
                 ];
             })->reverse()->values(),
+            // Recall trace: every invoice in any branch that took units of this batch.
+            'soldTo' => SaleLineBatch::query()
+                ->with(['saleLine.sale.customer:id,name,phone'])
+                ->where('batch_id', $batch->id)
+                ->latest('id')
+                ->limit(500)
+                ->get()
+                ->map(fn (SaleLineBatch $line) => [
+                    'invoice' => $line->saleLine->sale->number,
+                    'sale_id' => $line->saleLine->sale_id,
+                    'date' => $line->saleLine->sale->completed_at->toIso8601String(),
+                    'quantity' => $line->quantity_base - $line->returned_base,
+                    'customer' => $line->saleLine->sale->customer !== null ? $line->saleLine->sale->customer->name : $line->saleLine->sale->discount_holder_name,
+                    'phone' => $line->saleLine->sale->customer?->phone,
+                ])
+                ->values(),
+            'canQuarantine' => $request->user()?->can(Permission::StockQuarantine->value) ?? false,
+        ]);
+    }
+
+    public function quarantine(Request $request, Batch $batch, StockControlService $control): RedirectResponse
+    {
+        $data = $request->validate(['reason' => ['required', 'string', 'max:255']]);
+        $control->quarantine($batch, $data['reason']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Lot :lot quarantined in every branch.', ['lot' => $batch->lot_number])]);
+
+        return back();
+    }
+
+    public function release(Batch $batch, StockControlService $control): RedirectResponse
+    {
+        $control->release($batch);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Lot :lot released.', ['lot' => $batch->lot_number])]);
+
+        return back();
+    }
+
+    /**
+     * Batches of a product this branch holds, for document line pickers.
+     */
+    public function batchLookup(Request $request): JsonResponse
+    {
+        return response()->json([
+            'data' => StockBalance::query()
+                ->with('batch')
+                ->where('branch_id', $this->branchId($request))
+                ->where('product_id', $request->integer('product_id'))
+                ->where('quantity', '>', 0)
+                ->get()
+                ->map(fn (StockBalance $balance) => [
+                    'batch_id' => $balance->batch_id,
+                    'lot_number' => $balance->batch->lot_number,
+                    'expires_on' => $balance->batch->expires_on->toDateString(),
+                    'status' => $balance->batch->status->value,
+                    'quantity' => $balance->quantity,
+                    'unit_cost' => $balance->batch->unit_cost,
+                ])
+                ->sortBy('expires_on')
+                ->values(),
         ]);
     }
 

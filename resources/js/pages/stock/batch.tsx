@@ -1,4 +1,9 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { ShieldAlert, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ExpiryBadge } from '@/components/expiry-badge';
 import { PageHeader } from '@/components/page-header';
 import { StatusBadge } from '@/components/status-badge';
@@ -11,7 +16,9 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { formatDateTime, formatMoney, formatNumber } from '@/lib/format';
+import { show as showSale } from '@/routes/pos/sales';
 import { index, product as productRoute } from '@/routes/stock';
+import { quarantine, release } from '@/routes/stock/batches';
 
 type Movement = {
     id: number;
@@ -36,9 +43,26 @@ type Props = {
         product: { id: number; name: string; base_unit: string | null };
     };
     movements: Movement[];
+    soldTo: {
+        invoice: string;
+        sale_id: number;
+        date: string;
+        quantity: number;
+        customer: string | null;
+        phone: string | null;
+    }[];
+    canQuarantine: boolean;
 };
 
-export default function StockBatch({ batch, movements }: Props) {
+export default function StockBatch({
+    batch,
+    movements,
+    soldTo,
+    canQuarantine,
+}: Props) {
+    const [quarantining, setQuarantining] = useState(false);
+    const [reason, setReason] = useState('');
+
     return (
         <>
             <Head title={`Lot ${batch.lot_number}`} />
@@ -146,6 +170,110 @@ export default function StockBatch({ batch, movements }: Props) {
                         All batches of this product
                     </Link>
                 </p>
+
+                {canQuarantine && (
+                    <div className="mt-6 flex gap-2">
+                        {batch.status === 'quarantined' ? (
+                            <Button
+                                variant="outline"
+                                onClick={() =>
+                                    router.post(
+                                        release(batch.id).url,
+                                        {},
+                                        { preserveScroll: true },
+                                    )
+                                }
+                            >
+                                <ShieldCheck /> Release from quarantine
+                            </Button>
+                        ) : (
+                            batch.status !== 'disposed' && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setQuarantining(true)}
+                                >
+                                    <ShieldAlert /> Quarantine this lot
+                                </Button>
+                            )
+                        )}
+                    </div>
+                )}
+
+                <section className="mt-10 max-w-5xl">
+                    <h2 className="mb-1 font-medium">Recall trace</h2>
+                    <p className="mb-2 text-sm text-muted-foreground">
+                        Every invoice, in any branch, that took units of this
+                        lot.
+                    </p>
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Invoice</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Customer</TableHead>
+                                    <TableHead>Phone</TableHead>
+                                    <TableHead className="text-right">
+                                        Units kept
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {soldTo.length === 0 && (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={5}
+                                            className="h-14 text-center text-muted-foreground"
+                                        >
+                                            Not sold yet.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                                {soldTo.map((sale, i) => (
+                                    <TableRow key={i}>
+                                        <TableCell>
+                                            <Link
+                                                href={showSale(sale.sale_id)}
+                                                className="underline underline-offset-4"
+                                            >
+                                                {sale.invoice}
+                                            </Link>
+                                        </TableCell>
+                                        <TableCell>
+                                            {formatDateTime(sale.date)}
+                                        </TableCell>
+                                        <TableCell>
+                                            {sale.customer ?? 'Walk-in'}
+                                        </TableCell>
+                                        <TableCell>
+                                            {sale.phone ?? '—'}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {formatNumber(sale.quantity)}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </section>
+
+                <QuarantineDialog
+                    open={quarantining}
+                    reason={reason}
+                    onReasonChange={setReason}
+                    onClose={() => setQuarantining(false)}
+                    onConfirm={() =>
+                        router.post(
+                            quarantine(batch.id).url,
+                            { reason },
+                            {
+                                preserveScroll: true,
+                                onSuccess: () => setQuarantining(false),
+                            },
+                        )
+                    }
+                />
             </div>
         </>
     );
@@ -154,3 +282,37 @@ export default function StockBatch({ batch, movements }: Props) {
 StockBatch.layout = {
     breadcrumbs: [{ title: 'Stock on hand', href: index() }],
 };
+
+/** Asks for the quarantine reason before taking the lot off sale. */
+function QuarantineDialog({
+    open,
+    reason,
+    onReasonChange,
+    onClose,
+    onConfirm,
+}: {
+    open: boolean;
+    reason: string;
+    onReasonChange: (reason: string) => void;
+    onClose: () => void;
+    onConfirm: () => void;
+}) {
+    return (
+        <ConfirmDialog
+            open={open}
+            onOpenChange={(next) => !next && onClose()}
+            title="Quarantine this lot?"
+            description="It cannot be sold or issued in any branch until released."
+            confirmLabel="Quarantine"
+            destructive
+            onConfirm={onConfirm}
+        >
+            <Input
+                aria-label="Reason"
+                placeholder="Reason, e.g. FDA recall notice no."
+                value={reason}
+                onChange={(event) => onReasonChange(event.target.value)}
+            />
+        </ConfirmDialog>
+    );
+}

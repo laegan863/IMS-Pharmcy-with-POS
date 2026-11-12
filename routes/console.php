@@ -19,3 +19,6 @@ Schedule::command('backup:monitor')->dailyAt('07:00');
 
 // Every balance must equal the sum of its movements.
 Schedule::command('stock:verify-ledger')->dailyAt('02:30');
+
+// Mark expired batches and send 90/60/30-day expiry alerts before opening.
+Schedule::command('stock:daily-expiry-check')->dailyAt('06:00');
