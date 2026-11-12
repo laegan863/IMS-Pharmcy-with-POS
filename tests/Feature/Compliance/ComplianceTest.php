@@ -5,7 +5,6 @@ namespace Tests\Feature\Compliance;
 use App\Enums\ProductClassification;
 use App\Enums\Role;
 use App\Models\DangerousDrugEntry;
-use App\Models\Prescriber;
 use App\Models\PrescriptionLine;
 use App\Models\Product;
 use App\Models\Sale;
@@ -38,8 +37,6 @@ class ComplianceTest extends TestCase
 
     private Product $amoxil;
 
-    private Prescriber $doctor;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -54,7 +51,6 @@ class ComplianceTest extends TestCase
         $terminal = Terminal::factory()->create(['branch_id' => $this->cashier->branch_id]);
         $this->shift = app(ShiftService::class)->open($this->cashier, $terminal, '0');
         $this->amoxil = Product::factory()->rx()->create();
-        $this->doctor = Prescriber::factory()->create();
         app(StockService::class)->receive($this->cashier->branch_id, $this->amoxil, 'A1', now()->addYear()->toDateString(), 100, '3.00');
     }
 
@@ -78,11 +74,12 @@ class ComplianceTest extends TestCase
         ], $as ?? $this->cashier, $shift ?? $this->shift);
     }
 
-    private function prescription(Product $product, int $quantity, ?string $serial = null, ?Prescriber $prescriber = null): int
+    private function prescription(Product $product, int $quantity, ?string $serial = null, ?string $s2Number = null): int
     {
         $prescription = app(PrescriptionService::class)->create($this->cashier->branch_id, [
             'patient_name' => 'Juan Dela Cruz',
-            'prescriber_id' => ($prescriber ?? $this->doctor)->id,
+            'prescriber_name' => 'Dr. Liza Ramos',
+            'prescriber_s2_number' => $s2Number,
             'prescribed_on' => now()->toDateString(),
             'special_form_serial' => $serial,
         ], [['product_id' => $product->id, 'quantity_prescribed_base' => $quantity]], $this->cashier);
@@ -144,23 +141,22 @@ class ComplianceTest extends TestCase
     {
         $drug = Product::factory()->create(['classification' => ProductClassification::DangerousDrug]);
         app(StockService::class)->receive($this->cashier->branch_id, $drug, 'D1', now()->addYear()->toDateString(), 30, '10.00');
-        $s2Doctor = Prescriber::factory()->withS2()->create();
 
         try {
-            $this->prescription($drug, 10, null, $s2Doctor);
+            $this->prescription($drug, 10, null, 'S2-7788');
             $this->fail('Dangerous drug prescription without form serial accepted.');
         } catch (ValidationException $exception) {
             $this->assertArrayHasKey('special_form_serial', $exception->errors());
         }
 
         try {
-            $this->prescription($drug, 10, 'SPF-001', $this->doctor);
-            $this->fail('Prescriber without S2 accepted.');
+            $this->prescription($drug, 10, 'SPF-001');
+            $this->fail('Prescriber without S2 number accepted.');
         } catch (ValidationException $exception) {
-            $this->assertArrayHasKey('prescriber_id', $exception->errors());
+            $this->assertArrayHasKey('prescriber_s2_number', $exception->errors());
         }
 
-        $lineId = $this->prescription($drug, 10, 'SPF-001', $s2Doctor);
+        $lineId = $this->prescription($drug, 10, 'SPF-001', 'S2-7788');
 
         try {
             $this->sell($drug, 10, ['prescription_line_id' => $lineId]);
@@ -173,6 +169,8 @@ class ComplianceTest extends TestCase
 
         $entry = DangerousDrugEntry::sole();
         $this->assertSame('SPF-001', $entry->special_form_serial);
+        $this->assertSame('Dr. Liza Ramos', $entry->prescriber_name);
+        $this->assertSame('S2-7788', $entry->prescriber_s2_number);
         $this->assertSame(20, $entry->balance_after);
         $this->assertSame($this->pharmacist->id, $entry->pharmacist_id);
 
@@ -197,7 +195,7 @@ class ComplianceTest extends TestCase
         $this->actingAs($this->cashier)
             ->postJson(route('pos.rx.store'), [
                 'patient_name' => 'Maria Santos',
-                'prescriber_id' => $this->doctor->id,
+                'prescriber_name' => 'Dr. Liza Ramos',
                 'prescribed_on' => now()->toDateString(),
                 'product_id' => $this->amoxil->id,
                 'quantity_prescribed_base' => 21,

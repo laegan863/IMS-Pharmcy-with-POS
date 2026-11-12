@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
  * Dispensing records. A prescription line tracks quantity prescribed,
  * dispensed and the balance, so partial fills are allowed and recorded
  * (RA 10918). Dangerous drug sales get a register entry with the special
- * prescription form serial, patient, S2 prescriber and dispensing pharmacist.
+ * prescription form serial, patient, prescriber's S2 number and dispensing pharmacist.
  */
 return new class extends Migration
 {
@@ -21,7 +21,11 @@ return new class extends Migration
             $table->foreignId('customer_id')->nullable()->constrained()->nullOnDelete();
             $table->string('patient_name', 150);
             $table->string('patient_address')->nullable();
-            $table->foreignId('prescriber_id')->constrained()->restrictOnDelete();
+            // The prescriber as written on the prescription: any doctor, not
+            // only those kept on the Prescribers list.
+            $table->string('prescriber_name', 150);
+            $table->string('prescriber_prc_number', 30)->nullable();
+            $table->string('prescriber_s2_number', 30)->nullable();
             $table->date('prescribed_on');
             // Dangerous drugs: the yellow special prescription form's serial number.
             $table->string('special_form_serial', 50)->nullable();
@@ -54,7 +58,8 @@ return new class extends Migration
             $table->string('special_form_serial', 50);
             $table->string('patient_name', 150);
             $table->string('patient_address')->nullable();
-            $table->foreignId('prescriber_id')->constrained()->restrictOnDelete();
+            $table->string('prescriber_name', 150);
+            $table->string('prescriber_s2_number', 30);
             $table->unsignedInteger('quantity_base');
             // Branch stock of this product right after the dispensing.
             $table->unsignedInteger('balance_after');

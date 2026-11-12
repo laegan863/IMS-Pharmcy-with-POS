@@ -61,7 +61,7 @@ class DispensingRules
                 continue;
             }
 
-            $prescriptionLine = PrescriptionLine::query()->with(['prescription.prescriber', 'product'])->find((int) $prescriptionLineId);
+            $prescriptionLine = PrescriptionLine::query()->with(['prescription', 'product'])->find((int) $prescriptionLineId);
 
             if ($prescriptionLine === null || $prescriptionLine->product->generic_name_id !== $line['product']->generic_name_id) {
                 throw ValidationException::withMessages(["lines.{$index}" => __('The prescription is not for this medicine.')]);
@@ -74,8 +74,8 @@ class DispensingRules
             }
 
             if ($classification === ProductClassification::DangerousDrug) {
-                if (blank($prescriptionLine->prescription->special_form_serial) || ! $prescriptionLine->prescription->prescriber->canPrescribeDangerousDrugs()) {
-                    throw ValidationException::withMessages(["lines.{$index}" => __('Dangerous drugs need the special prescription form and an S2 prescriber.')]);
+                if (blank($prescriptionLine->prescription->special_form_serial) || blank($prescriptionLine->prescription->prescriber_s2_number)) {
+                    throw ValidationException::withMessages(["lines.{$index}" => __("Dangerous drugs need the special prescription form and the prescriber's S2 number.")]);
                 }
 
                 $pharmacist ??= $cashier->can(Permission::DangerousDrugsDispense->value)
@@ -122,7 +122,8 @@ class DispensingRules
             'special_form_serial' => (string) $prescription->special_form_serial,
             'patient_name' => $prescription->patient_name,
             'patient_address' => $prescription->patient_address,
-            'prescriber_id' => $prescription->prescriber_id,
+            'prescriber_name' => $prescription->prescriber_name,
+            'prescriber_s2_number' => (string) $prescription->prescriber_s2_number,
             'quantity_base' => $line['quantity_base'],
             'balance_after' => $this->stock->onHand($branchId, $saleLine->product_id),
             'pharmacist_id' => $pharmacist->id,

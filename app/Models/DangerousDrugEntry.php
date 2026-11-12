@@ -20,17 +20,17 @@ use LogicException;
  * @property string $special_form_serial
  * @property string $patient_name
  * @property string|null $patient_address
- * @property int $prescriber_id
+ * @property string $prescriber_name
+ * @property string $prescriber_s2_number
  * @property int $quantity_base
  * @property int $balance_after
  * @property int $pharmacist_id
  * @property CarbonImmutable $created_at
  * @property-read Product $product
- * @property-read Prescriber $prescriber
  * @property-read User $pharmacist
  * @property-read SaleLine $saleLine
  */
-#[Fillable(['branch_id', 'sale_line_id', 'product_id', 'prescription_id', 'special_form_serial', 'patient_name', 'patient_address', 'prescriber_id', 'quantity_base', 'balance_after', 'pharmacist_id', 'created_at'])]
+#[Fillable(['branch_id', 'sale_line_id', 'product_id', 'prescription_id', 'special_form_serial', 'patient_name', 'patient_address', 'prescriber_name', 'prescriber_s2_number', 'quantity_base', 'balance_after', 'pharmacist_id', 'created_at'])]
 class DangerousDrugEntry extends Model
 {
     use BelongsToBranch;
@@ -49,14 +49,6 @@ class DangerousDrugEntry extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
-    }
-
-    /**
-     * @return BelongsTo<Prescriber, $this>
-     */
-    public function prescriber(): BelongsTo
-    {
-        return $this->belongsTo(Prescriber::class);
     }
 
     /**

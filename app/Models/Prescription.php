@@ -21,7 +21,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $customer_id
  * @property string $patient_name
  * @property string|null $patient_address
- * @property int $prescriber_id
+ * @property string $prescriber_name
+ * @property string|null $prescriber_prc_number
+ * @property string|null $prescriber_s2_number
  * @property CarbonImmutable $prescribed_on
  * @property string|null $special_form_serial
  * @property string|null $photo_path
@@ -29,22 +31,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $created_by
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
- * @property-read Prescriber $prescriber
  * @property-read Collection<int, PrescriptionLine> $lines
  * @property-read User $creator
  */
-#[Fillable(['branch_id', 'number', 'customer_id', 'patient_name', 'patient_address', 'prescriber_id', 'prescribed_on', 'special_form_serial', 'photo_path', 'notes', 'created_by'])]
+#[Fillable(['branch_id', 'number', 'customer_id', 'patient_name', 'patient_address', 'prescriber_name', 'prescriber_prc_number', 'prescriber_s2_number', 'prescribed_on', 'special_form_serial', 'photo_path', 'notes', 'created_by'])]
 class Prescription extends Model
 {
     use Auditable, BelongsToBranch;
-
-    /**
-     * @return BelongsTo<Prescriber, $this>
-     */
-    public function prescriber(): BelongsTo
-    {
-        return $this->belongsTo(Prescriber::class);
-    }
 
     /**
      * @return HasMany<PrescriptionLine, $this>

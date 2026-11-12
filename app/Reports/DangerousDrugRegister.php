@@ -71,7 +71,7 @@ final class DangerousDrugRegister extends Report
                 ->where('created_at', '<', $filters->start())
                 ->sum('quantity');
 
-            $entries = DangerousDrugEntry::withoutGlobalScopes()->with(['prescriber', 'pharmacist'])
+            $entries = DangerousDrugEntry::withoutGlobalScopes()->with(['saleLine', 'pharmacist'])
                 ->where('branch_id', $filters->branchId)->where('product_id', $product->id)->get()->keyBy('sale_line_id');
 
             $movements = StockMovement::withoutGlobalScopes()
@@ -98,7 +98,7 @@ final class DangerousDrugRegister extends Report
                     'balance' => $balance,
                     'patient' => $entry?->patient_name,
                     'address' => $entry?->patient_address,
-                    'prescriber' => $entry ? $entry->prescriber->name.' (S2 '.$entry->prescriber->s2_license_number.')' : null,
+                    'prescriber' => $entry ? $entry->prescriber_name.' (S2 '.$entry->prescriber_s2_number.')' : null,
                     'form_serial' => $entry?->special_form_serial,
                     'pharmacist' => $entry?->pharmacist->name,
                 ];

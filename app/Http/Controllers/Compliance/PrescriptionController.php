@@ -24,10 +24,11 @@ class PrescriptionController extends Controller
 {
     public function index(Request $request): Response
     {
-        $table = TableQuery::for(Prescription::query()->with(['prescriber:id,name', 'lines']), $request)
+        $table = TableQuery::for(Prescription::query()->with('lines'), $request)
             ->searchUsing(fn (Builder $query, string $term) => $query
                 ->where('number', 'like', "%{$term}%")
-                ->orWhere('patient_name', 'like', "%{$term}%"))
+                ->orWhere('patient_name', 'like', "%{$term}%")
+                ->orWhere('prescriber_name', 'like', "%{$term}%"))
             ->sortable(['number', 'prescribed_on', 'created_at'])
             ->defaultSort('created_at', 'desc')
             ->filter('open', fn (Builder $query, string $value) => $value === 'open'
@@ -37,7 +38,7 @@ class PrescriptionController extends Controller
                 'id' => $prescription->id,
                 'number' => $prescription->number,
                 'patient_name' => $prescription->patient_name,
-                'prescriber' => $prescription->prescriber->name,
+                'prescriber' => $prescription->prescriber_name,
                 'prescribed_on' => $prescription->prescribed_on->toDateString(),
                 'lines' => $prescription->lines->count(),
                 'open' => $prescription->lines->contains(fn (PrescriptionLine $line) => $line->balance() > 0),
@@ -81,7 +82,7 @@ class PrescriptionController extends Controller
 
     public function show(Prescription $prescription): Response
     {
-        $prescription->load(['prescriber', 'creator:id,name', 'lines.product.genericName', 'lines.product.dosageForm']);
+        $prescription->load(['creator:id,name', 'lines.product.genericName', 'lines.product.dosageForm']);
 
         return Inertia::render('compliance/prescriptions/show', [
             'prescription' => [
@@ -89,9 +90,9 @@ class PrescriptionController extends Controller
                 'number' => $prescription->number,
                 'patient_name' => $prescription->patient_name,
                 'patient_address' => $prescription->patient_address,
-                'prescriber' => $prescription->prescriber->name,
-                'prc' => $prescription->prescriber->prc_license_number,
-                's2' => $prescription->prescriber->s2_license_number,
+                'prescriber' => $prescription->prescriber_name,
+                'prc' => $prescription->prescriber_prc_number,
+                's2' => $prescription->prescriber_s2_number,
                 'prescribed_on' => $prescription->prescribed_on->toDateString(),
                 'special_form_serial' => $prescription->special_form_serial,
                 'notes' => $prescription->notes,
@@ -189,7 +190,9 @@ class PrescriptionController extends Controller
             'customer_id' => ['nullable', 'integer', Rule::exists('customers', 'id')],
             'patient_name' => ['required', 'string', 'max:150'],
             'patient_address' => ['nullable', 'string', 'max:255'],
-            'prescriber_id' => ['required', 'integer', Rule::exists('prescribers', 'id')],
+            'prescriber_name' => ['required', 'string', 'max:150'],
+            'prescriber_prc_number' => ['nullable', 'string', 'max:30'],
+            'prescriber_s2_number' => ['nullable', 'string', 'max:30'],
             'prescribed_on' => ['required', 'date', 'before_or_equal:today'],
             'special_form_serial' => ['nullable', 'string', 'max:50'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -198,7 +201,7 @@ class PrescriptionController extends Controller
 
     /**
      * @param  array<string, mixed>  $data
-     * @return array{customer_id: int|null, patient_name: string, patient_address: string|null, prescriber_id: int, prescribed_on: string, special_form_serial: string|null, notes: string|null}
+     * @return array{customer_id: int|null, patient_name: string, patient_address: string|null, prescriber_name: string, prescriber_prc_number: string|null, prescriber_s2_number: string|null, prescribed_on: string, special_form_serial: string|null, notes: string|null}
      */
     private function header(array $data): array
     {
@@ -206,7 +209,9 @@ class PrescriptionController extends Controller
             'customer_id' => isset($data['customer_id']) ? (int) $data['customer_id'] : null,
             'patient_name' => (string) $data['patient_name'],
             'patient_address' => $data['patient_address'] ?? null,
-            'prescriber_id' => (int) $data['prescriber_id'],
+            'prescriber_name' => (string) $data['prescriber_name'],
+            'prescriber_prc_number' => $data['prescriber_prc_number'] ?? null,
+            'prescriber_s2_number' => $data['prescriber_s2_number'] ?? null,
             'prescribed_on' => (string) $data['prescribed_on'],
             'special_form_serial' => $data['special_form_serial'] ?? null,
             'notes' => $data['notes'] ?? null,

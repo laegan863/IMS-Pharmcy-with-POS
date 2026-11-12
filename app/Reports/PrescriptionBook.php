@@ -49,7 +49,7 @@ final class PrescriptionBook extends Report
 
     public function rows(ReportFilters $filters): iterable
     {
-        foreach (PrescriptionLine::query()->with(['prescription.prescriber', 'product.genericName', 'product.dosageForm'])
+        foreach (PrescriptionLine::query()->with(['prescription', 'product.genericName', 'product.dosageForm'])
             ->whereHas('prescription', fn ($query) => $query->where('branch_id', $filters->branchId)
                 ->whereBetween('created_at', [$filters->start(), $filters->end()]))
             ->orderBy('prescription_id')->get() as $line) {
@@ -57,8 +57,8 @@ final class PrescriptionBook extends Report
                 'prescribed_on' => $line->prescription->prescribed_on->toDateString(),
                 'number' => $line->prescription->number,
                 'patient' => $line->prescription->patient_name,
-                'prescriber' => $line->prescription->prescriber->name,
-                'prc' => $line->prescription->prescriber->prc_license_number,
+                'prescriber' => $line->prescription->prescriber_name,
+                'prc' => $line->prescription->prescriber_prc_number,
                 'product' => $line->product->displayName(),
                 'prescribed' => $line->quantity_prescribed_base,
                 'dispensed' => $line->quantity_dispensed_base,

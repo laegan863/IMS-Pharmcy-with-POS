@@ -2,7 +2,6 @@
 
 namespace App\Services\Compliance;
 
-use App\Models\Prescriber;
 use App\Models\Prescription;
 use App\Models\PrescriptionLine;
 use App\Models\Product;
@@ -14,7 +13,8 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Records prescriptions so Rx items can be sold. A dangerous drug line needs
- * the special prescription form serial and a prescriber with an S2 licence.
+ * the special prescription form serial and the prescriber's S2 licence number.
+ * The prescriber is free text, copied from the prescription.
  */
 class PrescriptionService
 {
@@ -23,12 +23,11 @@ class PrescriptionService
     public function __construct(private DocumentNumbers $numbers) {}
 
     /**
-     * @param  array{customer_id?: int|null, patient_name: string, patient_address?: string|null, prescriber_id: int, prescribed_on: string, special_form_serial?: string|null, notes?: string|null}  $header
+     * @param  array{customer_id?: int|null, patient_name: string, patient_address?: string|null, prescriber_name: string, prescriber_prc_number?: string|null, prescriber_s2_number?: string|null, prescribed_on: string, special_form_serial?: string|null, notes?: string|null}  $header
      * @param  list<array{product_id: int, quantity_prescribed_base: int, directions?: string|null}>  $lines
      */
     public function create(int $branchId, array $header, array $lines, User $user, ?UploadedFile $photo = null): Prescription
     {
-        $prescriber = Prescriber::query()->findOrFail($header['prescriber_id']);
         $products = Product::query()->whereIn('id', array_column($lines, 'product_id'))->get()->keyBy('id');
 
         foreach ($lines as $index => $line) {
@@ -39,8 +38,8 @@ class PrescriptionService
             }
 
             if ($product->classification->value === 'dangerous_drug') {
-                if (! $prescriber->canPrescribeDangerousDrugs()) {
-                    throw ValidationException::withMessages(['prescriber_id' => __('This prescriber has no S2 licence on file.')]);
+                if (blank($header['prescriber_s2_number'] ?? null)) {
+                    throw ValidationException::withMessages(['prescriber_s2_number' => __("Enter the prescriber's S2 licence number.")]);
                 }
 
                 if (blank($header['special_form_serial'] ?? null)) {
@@ -75,7 +74,7 @@ class PrescriptionService
     public function openLinesFor(int $branchId, Product $product): array
     {
         return array_values(PrescriptionLine::query()
-            ->with(['prescription.prescriber', 'product.genericName'])
+            ->with(['prescription', 'product.genericName'])
             ->whereHas('prescription', fn ($query) => $query->where('branch_id', $branchId))
             ->whereHas('product', fn ($query) => $query->where('generic_name_id', $product->generic_name_id))
             ->whereColumn('quantity_dispensed_base', '<', 'quantity_prescribed_base')
@@ -86,7 +85,7 @@ class PrescriptionService
                 'id' => $line->id,
                 'number' => $line->prescription->number,
                 'patient_name' => $line->prescription->patient_name,
-                'prescriber' => $line->prescription->prescriber->name,
+                'prescriber' => $line->prescription->prescriber_name,
                 'prescribed_on' => $line->prescription->prescribed_on->toDateString(),
                 'product' => $line->product->displayName(),
                 'balance' => $line->balance(),

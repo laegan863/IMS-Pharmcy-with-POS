@@ -1,13 +1,11 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Field } from '@/components/form/field';
 import { TextField } from '@/components/form/text-field';
 import { LineItemEditor } from '@/components/line-item-editor';
 import type { LineColumn } from '@/components/line-item-editor';
 import { PageHeader } from '@/components/page-header';
-import { PrescriberPicker } from '@/components/prescriber-picker';
-import type { PrescriberOption } from '@/components/prescriber-picker';
+import { PrescriberFields } from '@/components/prescriber-fields';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
@@ -24,11 +22,12 @@ type Line = {
 };
 
 export default function PrescriptionForm() {
-    const [prescriber, setPrescriber] = useState<PrescriberOption | null>(null);
     const form = useForm({
         patient_name: '',
         patient_address: '',
-        prescriber_id: '',
+        prescriber_name: '',
+        prescriber_prc_number: '',
+        prescriber_s2_number: '',
         prescribed_on: new Date().toISOString().slice(0, 10),
         special_form_serial: '',
         notes: '',
@@ -121,26 +120,26 @@ export default function PrescriptionForm() {
                         />
                     </div>
                     <div className="grid gap-6 sm:grid-cols-3">
-                        <Field
-                            label="Prescriber"
-                            htmlFor="prescriber"
-                            error={errors.prescriber_id}
-                            required
-                            className="sm:col-span-2"
-                        >
-                            <PrescriberPicker
-                                id="prescriber"
-                                value={prescriber}
-                                invalid={Boolean(errors.prescriber_id)}
-                                onChange={(next) => {
-                                    setPrescriber(next);
-                                    form.setData(
-                                        'prescriber_id',
-                                        next ? String(next.id) : '',
-                                    );
+                        <div className="sm:col-span-2">
+                            <PrescriberFields
+                                idPrefix="rx"
+                                value={{
+                                    prescriber_name: form.data.prescriber_name,
+                                    prescriber_prc_number:
+                                        form.data.prescriber_prc_number,
+                                    prescriber_s2_number:
+                                        form.data.prescriber_s2_number,
                                 }}
+                                onChange={(next) =>
+                                    form.setData((data) => ({
+                                        ...data,
+                                        ...next,
+                                    }))
+                                }
+                                needsS2={hasDangerousDrug}
+                                errors={errors}
                             />
-                        </Field>
+                        </div>
                         <TextField
                             id="prescribed_on"
                             label="Prescription date"

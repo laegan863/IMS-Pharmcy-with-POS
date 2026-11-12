@@ -31,7 +31,7 @@ class PrescriberController extends Controller
     }
 
     /**
-     * JSON lookup for the prescription form.
+     * JSON name suggestions for the free-text prescriber on prescriptions.
      */
     public function lookup(Request $request): JsonResponse
     {
@@ -45,23 +45,6 @@ class PrescriberController extends Controller
                 ->limit(10)
                 ->get(['id', 'name', 'prc_license_number', 's2_license_number']),
         ]);
-    }
-
-    /**
-     * Adds a prescriber from the POS prescription dialog when the doctor is
-     * not on file yet. Only name and PRC number; the rest can be completed
-     * later on the Prescribers page.
-     */
-    public function quickStore(Request $request): JsonResponse
-    {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:150'],
-            'prc_license_number' => ['nullable', 'string', 'max:30', Rule::unique('prescribers', 'prc_license_number')],
-        ], [], ['prc_license_number' => 'PRC licence number']);
-
-        $prescriber = Prescriber::create([...$data, 'is_active' => true]);
-
-        return response()->json(['data' => $prescriber->only(['id', 'name', 'prc_license_number', 's2_license_number'])], 201);
     }
 
     public function create(): Response

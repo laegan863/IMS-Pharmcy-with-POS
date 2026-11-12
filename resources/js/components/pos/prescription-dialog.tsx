@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Field } from '@/components/form/field';
-import { PrescriberPicker } from '@/components/prescriber-picker';
-import type { PrescriberOption } from '@/components/prescriber-picker';
+import {
+    emptyPrescriber,
+    PrescriberFields,
+} from '@/components/prescriber-fields';
+import type { PrescriberDetails } from '@/components/prescriber-fields';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -51,7 +54,8 @@ export function PrescriptionDialog({
 }) {
     const [lines, setLines] = useState<OpenLine[]>([]);
     const [creating, setCreating] = useState(false);
-    const [prescriber, setPrescriber] = useState<PrescriberOption | null>(null);
+    const [prescriber, setPrescriber] =
+        useState<PrescriberDetails>(emptyPrescriber);
     const [form, setForm] = useState({
         patient_name: '',
         patient_address: '',
@@ -79,7 +83,10 @@ export function PrescriptionDialog({
     // looks dead without a reason.
     const missing = [
         !form.patient_name.trim() && 'enter the patient name',
-        !prescriber && 'pick the prescriber from the list (or add them)',
+        !prescriber.prescriber_name.trim() && "enter the doctor's name",
+        dangerous &&
+            !prescriber.prescriber_s2_number.trim() &&
+            "enter the doctor's S2 licence no.",
         !(Number(form.quantity_prescribed_base) > 0) &&
             'enter the quantity prescribed',
         dangerous &&
@@ -96,7 +103,7 @@ export function PrescriptionDialog({
                 number: string;
             }>(store().url, {
                 ...form,
-                prescriber_id: prescriber?.id,
+                ...prescriber,
                 product_id: productId,
             });
             onPick({
@@ -119,7 +126,7 @@ export function PrescriptionDialog({
                     <DialogTitle>Prescription for {productName}</DialogTitle>
                     <DialogDescription>
                         {dangerous
-                            ? 'Dangerous drug: needs the special prescription form, an S2 prescriber and the pharmacist.'
+                            ? "Dangerous drug: needs the special prescription form, the doctor's S2 licence no. and the pharmacist."
                             : 'Choose the prescription being filled. Partial fills are allowed.'}
                     </DialogDescription>
                 </DialogHeader>
@@ -204,17 +211,12 @@ export function PrescriptionDialog({
                                 }
                             />
                         </Field>
-                        <Field
-                            label="Prescriber"
-                            htmlFor="rx-prescriber"
-                            required
-                        >
-                            <PrescriberPicker
-                                id="rx-prescriber"
-                                value={prescriber}
-                                onChange={setPrescriber}
-                            />
-                        </Field>
+                        <PrescriberFields
+                            idPrefix="rx"
+                            value={prescriber}
+                            onChange={setPrescriber}
+                            needsS2={dangerous}
+                        />
                         <div className="grid grid-cols-2 gap-3">
                             <Field label="Date" htmlFor="rx-date" required>
                                 <Input
