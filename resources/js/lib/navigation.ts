@@ -3,7 +3,10 @@ import type { LucideIcon } from 'lucide-react';
 import {
     Boxes,
     Building2,
+    ClipboardList,
     ContactRound,
+    PackageCheck,
+    Undo2,
     LayoutGrid,
     ListTree,
     Pill,
@@ -23,6 +26,9 @@ import { index as lookups } from '@/routes/catalog/lookups';
 import { index as prescribers } from '@/routes/catalog/prescribers';
 import { index as products } from '@/routes/catalog/products';
 import { index as suppliers } from '@/routes/catalog/suppliers';
+import { index as purchaseOrders } from '@/routes/purchasing/orders';
+import { index as receipts } from '@/routes/purchasing/receipts';
+import { index as supplierReturns } from '@/routes/purchasing/returns';
 import { index as stock } from '@/routes/stock';
 
 export type AppNavItem = {
@@ -55,6 +61,33 @@ export const navigation: AppNavSection[] = [
                 href: stock(),
                 icon: Boxes,
                 permission: 'stock.view',
+            },
+        ],
+    },
+    {
+        title: 'Purchasing',
+        items: [
+            {
+                title: 'Purchase orders',
+                href: purchaseOrders(),
+                icon: ClipboardList,
+                permission: [
+                    'purchase-orders.manage',
+                    'purchase-orders.approve',
+                    'receipts.manage',
+                ],
+            },
+            {
+                title: 'Goods receipts',
+                href: receipts(),
+                icon: PackageCheck,
+                permission: 'receipts.manage',
+            },
+            {
+                title: 'Supplier returns',
+                href: supplierReturns(),
+                icon: Undo2,
+                permission: 'supplier-returns.manage',
             },
         ],
     },

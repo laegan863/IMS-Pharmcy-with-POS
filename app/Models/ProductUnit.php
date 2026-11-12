@@ -88,7 +88,10 @@ class ProductUnit extends Model
      */
     public static function usedBy(): array
     {
-        return [];
+        return [
+            ['purchase_order_lines', 'product_unit_id'],
+            ['goods_receipt_lines', 'product_unit_id'],
+        ];
     }
 
     /**
