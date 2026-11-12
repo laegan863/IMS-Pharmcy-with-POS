@@ -74,6 +74,7 @@ class PosController extends Controller
             'lines.*.quantity' => ['required', 'integer', 'min:1', 'max:100000'],
             'lines.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'lines.*.batch_id' => ['nullable', 'integer'],
+            'lines.*.prescription_line_id' => ['nullable', 'integer'],
             'discount_type' => ['required', 'in:none,senior,pwd'],
             'discount_id_number' => ['nullable', 'string', 'max:50'],
             'discount_holder_name' => ['nullable', 'string', 'max:150'],

@@ -5,7 +5,9 @@ import {
     Building2,
     ClipboardList,
     ContactRound,
+    FileBarChart,
     FileText,
+    NotebookPen,
     ReceiptText,
     ShoppingCart,
     PackageCheck,
@@ -33,6 +35,8 @@ import { index as purchaseOrders } from '@/routes/purchasing/orders';
 import { index as receipts } from '@/routes/purchasing/receipts';
 import { index as supplierReturns } from '@/routes/purchasing/returns';
 import { index as stock } from '@/routes/stock';
+import { index as prescriptions } from '@/routes/compliance/prescriptions';
+import { index as reports } from '@/routes/reports';
 import { screen as pos } from '@/routes/pos';
 import { index as readings } from '@/routes/pos/readings';
 import { index as sales } from '@/routes/pos/sales';
@@ -79,6 +83,29 @@ export const navigation: AppNavSection[] = [
                 href: readings(),
                 icon: FileText,
                 permission: 'pos.readings',
+            },
+        ],
+    },
+    {
+        title: 'Compliance',
+        items: [
+            {
+                title: 'Prescriptions',
+                href: prescriptions(),
+                icon: NotebookPen,
+                permission: 'prescriptions.manage',
+            },
+            {
+                title: 'Reports',
+                href: reports(),
+                icon: FileBarChart,
+                permission: [
+                    'compliance.reports',
+                    'reports.sales',
+                    'reports.inventory',
+                    'reports.profit',
+                    'products.view',
+                ],
             },
         ],
     },

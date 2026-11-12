@@ -105,6 +105,7 @@ class DocumentNumbers
             self::DISPOSAL => 'DSP',
             self::SHIFT => 'SH',
             self::Z_READING => 'Z',
+            'prescription' => 'RX',
             default => strtoupper($series),
         };
     }

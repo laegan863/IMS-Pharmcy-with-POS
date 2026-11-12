@@ -3,7 +3,9 @@
 namespace App\Services\Sales;
 
 use App\Enums\Permission;
+use App\Enums\ProductClassification;
 use App\Enums\StockMovementType;
+use App\Models\PrescriptionLine;
 use App\Models\Reading;
 use App\Models\Sale;
 use App\Models\SaleAdjustment;
@@ -70,7 +72,8 @@ class SaleAdjustmentService
                 'created_at' => now(),
             ]);
 
-            foreach ($sale->lines()->with('batches.batch')->get() as $line) {
+            foreach ($sale->lines()->with(['batches.batch', 'product'])->get() as $line) {
+                $this->reverseDispensing($line, $line->quantity_base);
                 $this->returnStock($line, $line->quantity_base, $adjustment, StockMovementType::SaleVoid);
                 $adjustment->lines()->create(['sale_line_id' => $line->id, 'quantity_base' => $line->quantity_base, 'amount' => $line->line_total]);
                 $line->update(['refunded_base' => $line->quantity_base]);
@@ -97,7 +100,7 @@ class SaleAdjustmentService
                 throw ValidationException::withMessages(['sale' => __('A voided sale cannot be refunded.')]);
             }
 
-            $lines = $sale->lines()->with('batches.batch')->get()->keyBy('id');
+            $lines = $sale->lines()->with(['batches.batch', 'product'])->get()->keyBy('id');
             $quantities = array_filter($quantities, fn (int $quantity) => $quantity > 0);
 
             if ($quantities === []) {
@@ -140,6 +143,7 @@ class SaleAdjustmentService
                 $vat[] = Decimal::mul($line->vat_amount, $share);
                 $discounts[] = Decimal::mul($line->discount_amount, $share);
 
+                $this->reverseDispensing($line, $quantity);
                 $this->returnStock($line, $quantity, $adjustment, StockMovementType::Refund);
                 $adjustment->lines()->create(['sale_line_id' => $line->id, 'quantity_base' => $quantity, 'amount' => $amount]);
                 $line->increment('refunded_base', $quantity);
@@ -181,6 +185,22 @@ class SaleAdjustmentService
             if ($remaining === 0) {
                 break;
             }
+        }
+    }
+
+    /**
+     * Gives the prescription back its balance. Dangerous drug sales cannot be
+     * voided or refunded here: the register is append-only, so the
+     * pharmacist records the return with a stock adjustment instead.
+     */
+    private function reverseDispensing(SaleLine $line, int $quantity): void
+    {
+        if ($line->product->classification === ProductClassification::DangerousDrug) {
+            throw ValidationException::withMessages(['sale' => __('Dangerous drug sales cannot be voided or refunded at the POS. The pharmacist records the return.')]);
+        }
+
+        if ($line->prescription_line_id !== null) {
+            PrescriptionLine::query()->whereKey($line->prescription_line_id)->decrement('quantity_dispensed_base', $quantity);
         }
     }
 

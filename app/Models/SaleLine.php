@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $sale_id
  * @property int $product_id
  * @property int $product_unit_id
+ * @property int|null $prescription_line_id
  * @property string $description
  * @property int $quantity
  * @property int $quantity_base
@@ -37,7 +38,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read Collection<int, SaleLineBatch> $batches
  */
 #[Fillable([
-    'sale_id', 'product_id', 'product_unit_id', 'description', 'quantity', 'quantity_base', 'unit_price', 'list_price',
+    'sale_id', 'product_id', 'product_unit_id', 'prescription_line_id', 'description', 'quantity', 'quantity_base', 'unit_price', 'list_price',
     'price_override_by', 'tax_class', 'statutory_discount_applied', 'gross_amount', 'vatable_amount', 'vat_amount',
     'vat_exempt_amount', 'zero_rated_amount', 'discount_amount', 'line_total', 'cost_total', 'refunded_base',
 ])]

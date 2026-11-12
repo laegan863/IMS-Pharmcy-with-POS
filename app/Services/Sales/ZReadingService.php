@@ -84,7 +84,7 @@ class ZReadingService
             $terminal->z_counter++;
             $terminal->save();
 
-            return Reading::query()->create([
+            $reading = Reading::query()->create([
                 'branch_id' => $terminal->branch_id,
                 'terminal_id' => $terminal->id,
                 'type' => 'z',
@@ -98,6 +98,12 @@ class ZReadingService
                 'user_id' => $user->id,
                 'created_at' => now(),
             ]);
+
+            activity('pos')->performedOn($reading)->causedBy($user)->event('z-reading')
+                ->withProperties(['number' => $reading->number, 'grand_total_after' => $reading->grand_total_after, 'terminal_id' => $terminal->id])
+                ->log('Z-reading generated');
+
+            return $reading;
         });
     }
 }

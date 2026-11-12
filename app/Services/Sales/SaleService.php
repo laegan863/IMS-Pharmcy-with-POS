@@ -12,6 +12,7 @@ use App\Models\Sale;
 use App\Models\Shift;
 use App\Models\Terminal;
 use App\Models\User;
+use App\Services\Compliance\DispensingRules;
 use App\Services\DocumentNumbers;
 use App\Services\Stock\InsufficientStockException;
 use App\Services\Stock\StockService;
@@ -42,6 +43,7 @@ class SaleService
         private StockService $stock,
         private DocumentNumbers $numbers,
         private Settings $settings,
+        private DispensingRules $dispensing,
     ) {}
 
     /**
@@ -96,13 +98,14 @@ class SaleService
         $this->validateDiscount($input);
         $resolved = $this->resolve($input['lines']);
         $this->authorizeOverrides($resolved, $input);
+        $pharmacist = $this->dispensing->check($resolved, $input, $cashier);
 
         $priced = $this->calculator->calculate($this->calculatorLines($resolved), $input['discount_type']);
         $total = $priced['totals']['line_total'];
         [$payments, $paid, $change] = $this->settlePayments($input['payments'], $total);
 
         try {
-            return DB::transaction(function () use ($input, $cashier, $shift, $resolved, $priced, $payments, $paid, $change): Sale {
+            return DB::transaction(function () use ($input, $cashier, $shift, $resolved, $priced, $payments, $paid, $change, $pharmacist): Sale {
                 $terminal = Terminal::withoutGlobalScopes()->lockForUpdate()->findOrFail($shift->terminal_id);
 
                 $sale = Sale::query()->create([
@@ -176,6 +179,7 @@ class SaleService
                     }
 
                     $saleLine->update(['cost_total' => Decimal::sum($lineCost, Decimal::COST)]);
+                    $this->dispensing->record($saleLine, $line, $shift->branch_id, $pharmacist);
                     $costs[] = Decimal::sum($lineCost, Decimal::COST);
                 }
 
@@ -209,7 +213,7 @@ class SaleService
 
     /**
      * @param  list<array<string, mixed>>  $lines
-     * @return list<array{product: Product, unit: ProductUnit, quantity: int, quantity_base: int, unit_price: string, list_price: string, description: string, override: bool, batch_id: int|null, override_approver: int|null}>
+     * @return list<array{product: Product, unit: ProductUnit, quantity: int, quantity_base: int, unit_price: string, list_price: string, description: string, override: bool, batch_id: int|null, override_approver: int|null, prescription_line_id: int|null}>
      */
     private function resolve(array $lines): array
     {
@@ -259,6 +263,7 @@ class SaleService
                 'override' => $override,
                 'batch_id' => isset($line['batch_id']) && $line['batch_id'] !== '' ? (int) $line['batch_id'] : null,
                 'override_approver' => null,
+                'prescription_line_id' => isset($line['prescription_line_id']) && $line['prescription_line_id'] !== '' ? (int) $line['prescription_line_id'] : null,
             ];
         }
 

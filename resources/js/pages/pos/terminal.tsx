@@ -12,6 +12,8 @@ import {
     Wallet,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { GenericsDialog } from '@/components/pos/generics-dialog';
+import { PrescriptionDialog } from '@/components/pos/prescription-dialog';
 import { ProductPicker } from '@/components/product-picker';
 import { StatusBadge } from '@/components/status-badge';
 import { SupervisorApprovalDialog } from '@/components/supervisor-approval-dialog';
@@ -53,6 +55,9 @@ type CartLine = {
     quantity: number;
     /** Price override; needs a supervisor. */
     unit_price: string | null;
+    /** The prescription line this Rx item fills, and its label. */
+    prescription_line_id?: number | null;
+    prescription_label?: string | null;
 };
 
 type Discount = {
@@ -131,8 +136,16 @@ export default function PosTerminal({
         receipt_url: string;
     } | null>(null);
     const [dialog, setDialog] = useState<
-        'discount' | 'resume' | 'override' | null
+        | 'discount'
+        | 'resume'
+        | 'override'
+        | 'rx'
+        | 'generics'
+        | 'approval'
+        | null
     >(null);
+    /** The cart line a prescription or generics dialog is open for. */
+    const [activeLine, setActiveLine] = useState<CartLine | null>(null);
     const [overrideLine, setOverrideLine] = useState<{
         key: string;
         price: string;
@@ -293,6 +306,7 @@ export default function PosTerminal({
                     product_unit_id: line.product_unit_id,
                     quantity: line.quantity,
                     unit_price: line.unit_price,
+                    prescription_line_id: line.prescription_line_id ?? null,
                 })),
                 discount_type: discount.type,
                 discount_id_number: discount.id_number || null,
@@ -315,6 +329,14 @@ export default function PosTerminal({
                 // a retry returns the saved sale instead of posting twice.
                 setUncertain(true);
                 setError(exception.message);
+            } else if (
+                exception instanceof HttpError &&
+                'approver_pin' in exception.errors &&
+                approval === null
+            ) {
+                // A dangerous drug or override needs the pharmacist's PIN.
+                setError(exception.firstMessage());
+                setDialog('approval');
             } else {
                 setError(
                     exception instanceof HttpError
@@ -537,6 +559,49 @@ export default function PosTerminal({
                                                                     ? 'Rx'
                                                                     : 'S2'}
                                                             </StatusBadge>
+                                                        )}
+                                                        {(line.classification ===
+                                                            'rx' ||
+                                                            line.classification ===
+                                                                'dangerous_drug') && (
+                                                            <button
+                                                                type="button"
+                                                                className="text-xs underline underline-offset-2"
+                                                                disabled={
+                                                                    !editable
+                                                                }
+                                                                onClick={() => {
+                                                                    setActiveLine(
+                                                                        line,
+                                                                    );
+                                                                    setDialog(
+                                                                        'rx',
+                                                                    );
+                                                                }}
+                                                            >
+                                                                {line.prescription_label ??
+                                                                    'Attach prescription'}
+                                                            </button>
+                                                        )}
+                                                        {line.classification !==
+                                                            'non_drug' && (
+                                                            <button
+                                                                type="button"
+                                                                className="text-xs text-muted-foreground underline underline-offset-2"
+                                                                disabled={
+                                                                    !editable
+                                                                }
+                                                                onClick={() => {
+                                                                    setActiveLine(
+                                                                        line,
+                                                                    );
+                                                                    setDialog(
+                                                                        'generics',
+                                                                    );
+                                                                }}
+                                                            >
+                                                                Generics
+                                                            </button>
                                                         )}
                                                         {priced?.statutory_discount_applied && (
                                                             <StatusBadge tone="info">
@@ -986,6 +1051,77 @@ export default function PosTerminal({
                     </aside>
                 </div>
             </div>
+
+            {activeLine && (
+                <PrescriptionDialog
+                    open={dialog === 'rx'}
+                    productId={activeLine.product_id}
+                    productName={activeLine.name}
+                    dangerous={activeLine.classification === 'dangerous_drug'}
+                    quantityBase={
+                        activeLine.quantity *
+                        (activeLine.units.find(
+                            (unit) => unit.id === activeLine.product_unit_id,
+                        )?.conversion_factor ?? 1)
+                    }
+                    onClose={() => setDialog(null)}
+                    onPick={(picked) => {
+                        updateLine(activeLine.key, {
+                            prescription_line_id: picked.lineId,
+                            prescription_label: picked.label,
+                        });
+                        setDialog(null);
+                        picker.current?.focus();
+                    }}
+                />
+            )}
+
+            {activeLine && (
+                <GenericsDialog
+                    open={dialog === 'generics'}
+                    productId={activeLine.product_id}
+                    productName={activeLine.name}
+                    onClose={() => setDialog(null)}
+                    onSwap={(alternative) => {
+                        const factor =
+                            activeLine.units.find(
+                                (unit) =>
+                                    unit.id === activeLine.product_unit_id,
+                            )?.conversion_factor ?? 1;
+                        updateLine(activeLine.key, {
+                            product_id: alternative.id,
+                            product_unit_id: alternative.base_unit_id,
+                            name: alternative.name,
+                            units: [
+                                {
+                                    id: alternative.base_unit_id,
+                                    name: alternative.base_unit,
+                                    conversion_factor: 1,
+                                    is_base: true,
+                                    is_sellable: true,
+                                    is_purchasable: false,
+                                    price: alternative.base_price,
+                                },
+                            ],
+                            quantity: activeLine.quantity * factor,
+                            unit_price: null,
+                        });
+                        setDialog(null);
+                        picker.current?.focus();
+                    }}
+                />
+            )}
+
+            <SupervisorApprovalDialog
+                open={dialog === 'approval'}
+                onOpenChange={(open) => !open && setDialog(null)}
+                title="Pharmacist approval"
+                description="This sale needs a pharmacist or supervisor (dangerous drug or price override)."
+                onApprove={(given) => {
+                    setApproval(given);
+                    setDialog(null);
+                }}
+            />
 
             <DiscountDialog
                 open={dialog === 'discount'}
