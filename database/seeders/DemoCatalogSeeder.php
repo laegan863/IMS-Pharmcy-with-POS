@@ -54,14 +54,14 @@ class DemoCatalogSeeder extends Seeder
                 'storage_condition' => 'room',
                 'reorder_point' => 100,
                 'is_active' => true,
-            ], array_map(fn (array $unit) => [
+            ], array_values(array_map(fn (array $unit) => [
                 'name' => $unit[0],
                 'conversion_factor' => $unit[1],
                 'is_base' => $unit[1] === 1,
                 'is_sellable' => true,
                 'is_purchasable' => $unit[1] > 1 || count($units) === 1,
                 'price' => $unit[2],
-            ], $units), array_values(array_filter(array_map(
+            ], $units)), array_values(array_filter(array_map(
                 fn (array $unit) => $unit[3] ? ['code' => $unit[3], 'unit' => $unit[0]] : null,
                 $units,
             ))), true);
