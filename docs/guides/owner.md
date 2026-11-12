@@ -11,6 +11,11 @@ stock, and documents waiting for approval.
 cashier, inventory clerk) and branch. Give supervisors a PIN. Deactivate
 leavers; accounts are never deleted so history stays complete.
 
+**Roles.** _Roles_: create a role (for example Pharmacy assistant), tick the
+modules and actions it may use, and choose whether it needs two-factor. Edit
+a role to change what all its users can do. The Owner role always has full
+access and cannot be changed. A role still given to users cannot be deleted.
+
 **Prices.** Only you (and pharmacists) change prices, on the product form.
 Every change is kept in the product's price history.
 

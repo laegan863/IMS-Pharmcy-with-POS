@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\Role;
+use App\Enums\Role as DefaultRole;
 use App\Models\Concerns\Auditable;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
@@ -56,9 +56,9 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
      */
     public function staffRole(): ?Role
     {
-        $name = $this->getRoleNames()->first();
+        $role = $this->roles->first();
 
-        return is_string($name) ? Role::tryFrom($name) : null;
+        return $role instanceof Role ? $role : null;
     }
 
     /**
@@ -66,7 +66,18 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
      */
     public function requiresTwoFactor(): bool
     {
-        return $this->staffRole()?->requiresTwoFactor() ?? false;
+        $role = $this->staffRole();
+
+        return $role !== null && $role->requires_two_factor;
+    }
+
+    /**
+     * Owners have every permission and are the only ones who may create or
+     * change other owners.
+     */
+    public function isOwner(): bool
+    {
+        return $this->hasRole(DefaultRole::Owner->value);
     }
 
     /**

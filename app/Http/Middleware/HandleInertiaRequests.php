@@ -45,7 +45,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user,
                 // Used only to hide menus and buttons; the server checks every request.
                 'permissions' => $user instanceof User ? $user->getAllPermissions()->pluck('name')->values() : [],
-                'role' => $user instanceof User ? $user->staffRole()?->value : null,
+                'role' => $user instanceof User ? $user->staffRole()?->name : null,
                 'branch' => $user instanceof User ? $user->branch?->only(['id', 'code', 'name']) : null,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

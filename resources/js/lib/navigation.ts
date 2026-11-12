@@ -20,6 +20,7 @@ import {
     ListTree,
     Pill,
     ScrollText,
+    ShieldCheck,
     SlidersHorizontal,
     Stethoscope,
     Truck,
@@ -29,6 +30,7 @@ import { dashboard } from '@/routes';
 import { index as auditLog } from '@/routes/admin/audit-log';
 import { index as branches } from '@/routes/admin/branches';
 import { edit as storeSettings } from '@/routes/admin/settings';
+import { index as roles } from '@/routes/admin/roles';
 import { index as users } from '@/routes/admin/users';
 import { index as customers } from '@/routes/catalog/customers';
 import { index as lookups } from '@/routes/catalog/lookups';
@@ -221,6 +223,12 @@ export const navigation: AppNavSection[] = [
                 href: users(),
                 icon: Users,
                 permission: 'users.manage',
+            },
+            {
+                title: 'Roles',
+                href: roles(),
+                icon: ShieldCheck,
+                permission: 'roles.manage',
             },
             {
                 title: 'Branches',

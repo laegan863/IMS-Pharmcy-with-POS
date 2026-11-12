@@ -3,7 +3,9 @@
 namespace App\Enums;
 
 /**
- * The four staff roles and what each may do.
+ * The default roles a new store starts with, and their starting permissions.
+ * After installation roles are managed on the Roles page (App\Models\Role);
+ * only Owner is locked. RolesAndPermissionsSeeder creates these once.
  */
 enum Role: string
 {

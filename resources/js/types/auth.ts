@@ -10,7 +10,8 @@ export type User = {
     [key: string]: unknown;
 };
 
-export type Role = 'owner' | 'pharmacist' | 'cashier' | 'inventory-clerk';
+/** A role name such as 'owner' or 'cashier'; custom roles are created on the Roles page. */
+export type Role = string;
 
 export type BranchSummary = {
     id: number;

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UserRequest;
 use App\Models\Branch;
+use App\Models\Role;
 use App\Models\User;
 use App\Support\TableQuery;
 use Illuminate\Database\Eloquent\Builder;
@@ -37,7 +37,7 @@ class UserController extends Controller
                 'name' => $user->name,
                 'username' => $user->username,
                 'email' => $user->email,
-                'role' => $user->staffRole()?->label(),
+                'role' => $user->staffRole()?->displayName(),
                 'branch' => $user->branch?->name,
                 'is_active' => $user->is_active,
                 'two_factor' => $user->two_factor_confirmed_at !== null,
@@ -45,15 +45,15 @@ class UserController extends Controller
 
         return Inertia::render('admin/users/index', [
             ...$table,
-            'roles' => $this->roleOptions(),
+            'roles' => $this->roleOptions($request),
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
         return Inertia::render('admin/users/form', [
             'user' => null,
-            'roles' => $this->roleOptions(),
+            'roles' => $this->roleOptions($request),
             'branches' => $this->branchOptions(),
         ]);
     }
@@ -73,7 +73,7 @@ class UserController extends Controller
         return to_route('admin.users.index');
     }
 
-    public function edit(User $user): Response
+    public function edit(Request $request, User $user): Response
     {
         return Inertia::render('admin/users/form', [
             'user' => [
@@ -82,12 +82,12 @@ class UserController extends Controller
                 'username' => $user->username,
                 'email' => $user->email,
                 'branch_id' => $user->branch_id,
-                'role' => $user->staffRole()?->value,
+                'role' => $user->staffRole()?->name,
                 'is_active' => $user->is_active,
                 'has_supervisor_pin' => $user->supervisor_pin !== null,
                 'is_self' => $user->is(auth()->user()),
             ],
-            'roles' => $this->roleOptions(),
+            'roles' => $this->roleOptions($request),
             'branches' => $this->branchOptions(),
         ]);
     }
@@ -119,9 +119,17 @@ class UserController extends Controller
     /**
      * @return list<array{value: string, label: string}>
      */
-    private function roleOptions(): array
+    private function roleOptions(Request $request): array
     {
-        return array_map(fn (Role $role) => ['value' => $role->value, 'label' => $role->label()], Role::cases());
+        $isOwner = $request->user() instanceof User && $request->user()->isOwner();
+
+        return array_values(Role::query()
+            ->orderByDesc('is_system')
+            ->orderBy('label')
+            ->get()
+            ->reject(fn (Role $role) => $role->is_system && ! $isOwner)
+            ->map(fn (Role $role) => ['value' => $role->name, 'label' => $role->displayName()])
+            ->all());
     }
 
     /**

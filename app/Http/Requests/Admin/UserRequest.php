@@ -3,11 +3,10 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\Permission;
-use App\Enums\Role;
+use App\Enums\Role as DefaultRole;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Validator;
 
@@ -35,7 +34,7 @@ class UserRequest extends FormRequest
             'username' => ['required', 'string', 'min:3', 'max:50', 'regex:/^[a-z0-9._-]+$/', Rule::unique(User::class)->ignore($userId)],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)->ignore($userId)],
             'branch_id' => ['required', 'integer', Rule::exists('branches', 'id')],
-            'role' => ['required', new Enum(Role::class)],
+            'role' => ['required', 'string', Rule::exists('roles', 'name')->where('guard_name', 'web')],
             'is_active' => ['boolean'],
             'password' => [$userId === null ? 'required' : 'nullable', 'string', Password::defaults(), 'confirmed'],
             'supervisor_pin' => ['nullable', 'string', 'regex:/^[0-9]{4,8}$/'],
@@ -72,8 +71,15 @@ class UserRequest extends FormRequest
         return [
             function (Validator $validator): void {
                 $user = $this->route('user');
+                $actor = $this->user();
+                $actorIsOwner = $actor instanceof User && $actor->isOwner();
 
-                if (! $user instanceof User || ! $user->is($this->user())) {
+                // Only owners may create owners or change an owner's account.
+                if (! $actorIsOwner && ($this->input('role') === DefaultRole::Owner->value || ($user instanceof User && $user->isOwner()))) {
+                    $validator->errors()->add('role', __('Only an owner can give or change the Owner role.'));
+                }
+
+                if (! $user instanceof User || ! $user->is($actor)) {
                     return;
                 }
 
@@ -81,7 +87,7 @@ class UserRequest extends FormRequest
                     $validator->errors()->add('is_active', __('You cannot deactivate your own account.'));
                 }
 
-                if ($this->input('role') !== $user->staffRole()?->value) {
+                if ($this->input('role') !== $user->staffRole()?->name) {
                     $validator->errors()->add('role', __('You cannot change your own role.'));
                 }
             },
