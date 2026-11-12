@@ -22,3 +22,6 @@ Schedule::command('stock:verify-ledger')->dailyAt('02:30');
 
 // Mark expired batches and send 90/60/30-day expiry alerts before opening.
 Schedule::command('stock:daily-expiry-check')->dailyAt('06:00');
+
+// The owner's morning email with yesterday's figures.
+Schedule::command('reports:daily-summary')->dailyAt('06:30');

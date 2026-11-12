@@ -28,6 +28,16 @@ final class ReportRegistry
             'prescription-book' => new PrescriptionBook,
             'dangerous-drug-register' => new DangerousDrugRegister,
             'generic-price-list' => new GenericPriceList,
+            'discounts-by-supplier' => new DiscountsBySupplier,
+            'sales-by-day' => new SalesByDay,
+            'sales-by-cashier' => new SalesByCashier,
+            'sales-by-product' => new SalesByProduct,
+            'gross-profit' => new SalesByProduct(withProfit: true),
+            'inventory-valuation' => new InventoryValuation,
+            'stock-movements' => new StockMovementsReport,
+            'movers' => new MoversReport,
+            'expiry-list' => new ExpiryList,
+            'reorder-list' => new ReorderReport,
         ];
     }
 

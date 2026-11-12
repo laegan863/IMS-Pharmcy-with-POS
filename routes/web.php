@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard')->name('home');
 
 Route::middleware(['auth', 'verified', 'two-factor.required'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::post('notifications/read', [DashboardController::class, 'readNotifications'])->name('notifications.read');
 });
 
 require __DIR__.'/settings.php';
