@@ -24,7 +24,7 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->post(route('login.store'), [
-            'email' => $user->email,
+            'login' => $user->email,
             'password' => 'password',
         ]);
 
@@ -44,7 +44,7 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->withTwoFactor()->create();
 
         $response = $this->post(route('login'), [
-            'email' => $user->email,
+            'login' => $user->email,
             'password' => 'password',
         ]);
 
@@ -58,7 +58,7 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create();
 
         $this->post(route('login.store'), [
-            'email' => $user->email,
+            'login' => $user->email,
             'password' => 'wrong-password',
         ]);
 
@@ -83,10 +83,45 @@ class AuthenticationTest extends TestCase
         RateLimiter::increment(md5('login'.implode('|', [$user->email, '127.0.0.1'])), amount: 5);
 
         $response = $this->post(route('login.store'), [
-            'email' => $user->email,
+            'login' => $user->email,
             'password' => 'wrong-password',
         ]);
 
         $response->assertTooManyRequests();
+    }
+
+    public function test_users_can_authenticate_with_their_username()
+    {
+        $user = User::factory()->create(['username' => 'cashier1']);
+
+        $this->post(route('login.store'), [
+            'login' => 'Cashier1',
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_deactivated_users_can_not_authenticate()
+    {
+        $user = User::factory()->inactive()->create();
+
+        $this->post(route('login.store'), [
+            'login' => $user->username,
+            'password' => 'password',
+        ])->assertSessionHasErrors('login');
+
+        $this->assertGuest();
+    }
+
+    public function test_a_user_deactivated_mid_session_is_signed_out()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $user->update(['is_active' => false]);
+
+        $this->get(route('dashboard'))->assertRedirect(route('login'));
+
+        $this->assertGuest();
     }
 }

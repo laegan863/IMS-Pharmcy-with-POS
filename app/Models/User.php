@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Role;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Hash;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property int $id
@@ -38,7 +40,25 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+
+    /**
+     * The user's staff role, or null when none is assigned.
+     */
+    public function staffRole(): ?Role
+    {
+        $name = $this->getRoleNames()->first();
+
+        return is_string($name) ? Role::tryFrom($name) : null;
+    }
+
+    /**
+     * Whether the user's role must sign in with two-factor authentication.
+     */
+    public function requiresTwoFactor(): bool
+    {
+        return $this->staffRole()?->requiresTwoFactor() ?? false;
+    }
 
     /**
      * The user's home branch; branch-scoped queries use it.

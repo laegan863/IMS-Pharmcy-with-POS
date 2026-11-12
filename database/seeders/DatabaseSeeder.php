@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\Role;
 use App\Models\Branch;
 use App\Models\Terminal;
 use App\Models\User;
@@ -14,9 +15,14 @@ class DatabaseSeeder extends Seeder
 
     /**
      * Seed the application's database.
+     *
+     * Demo users all have the password "password". The owner and pharmacist
+     * are asked to turn on two-factor authentication at first sign-in.
      */
     public function run(): void
     {
+        $this->call(RolesAndPermissionsSeeder::class);
+
         $branch = Branch::factory()->create([
             'code' => 'MAIN',
             'name' => 'Main Branch',
@@ -27,10 +33,25 @@ class DatabaseSeeder extends Seeder
             'name' => 'Counter 1',
         ]);
 
-        User::factory()->for($branch)->withSupervisorPin()->create([
-            'name' => 'Test User',
-            'username' => 'test',
-            'email' => 'test@example.com',
-        ]);
+        $users = [
+            ['owner', 'Store Owner', Role::Owner, true],
+            ['pharmacist', 'Head Pharmacist', Role::Pharmacist, true],
+            ['cashier', 'Counter Cashier', Role::Cashier, false],
+            ['clerk', 'Inventory Clerk', Role::InventoryClerk, false],
+        ];
+
+        foreach ($users as [$username, $name, $role, $isSupervisor]) {
+            $factory = User::factory()->for($branch);
+
+            if ($isSupervisor) {
+                $factory = $factory->withSupervisorPin('1234');
+            }
+
+            $factory->create([
+                'name' => $name,
+                'username' => $username,
+                'email' => "{$username}@example.com",
+            ])->assignRole($role);
+        }
     }
 }

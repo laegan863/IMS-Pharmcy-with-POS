@@ -10,8 +10,20 @@ export type User = {
     [key: string]: unknown;
 };
 
+export type Role = 'owner' | 'pharmacist' | 'cashier' | 'inventory-clerk';
+
+export type BranchSummary = {
+    id: number;
+    code: string;
+    name: string;
+};
+
 export type Auth = {
     user: User;
+    /** Permission names such as "products.manage". For hiding UI only. */
+    permissions: string[];
+    role: Role | null;
+    branch: BranchSummary | null;
 };
 
 export type Passkey = {
