@@ -21,7 +21,7 @@ class EnsureTwoFactorIsEnabled
     {
         $user = $request->user();
 
-        if ($user instanceof User && $user->requiresTwoFactor() && $user->two_factor_confirmed_at === null) {
+        if (config('pharmacy.require_two_factor') && $user instanceof User && $user->requiresTwoFactor() && $user->two_factor_confirmed_at === null) {
             Inertia::flash('toast', [
                 'type' => 'error',
                 'message' => __('Your role requires two-factor authentication. Turn it on to continue.'),
