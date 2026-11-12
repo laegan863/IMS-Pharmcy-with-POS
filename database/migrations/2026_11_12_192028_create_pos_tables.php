@@ -28,7 +28,7 @@ return new class extends Migration
             // open, closed
             $table->string('status', 10)->default('open')->index();
             $table->decimal('opening_cash', 12, 2);
-            $table->timestamp('opened_at');
+            $table->dateTime('opened_at');
             $table->decimal('expected_cash', 12, 2)->nullable();
             $table->decimal('counted_cash', 12, 2)->nullable();
             $table->decimal('variance', 12, 2)->nullable();
@@ -82,7 +82,7 @@ return new class extends Migration
             // Set when the receipt is first printed; every later print is a reprint.
             $table->timestamp('printed_at')->nullable();
             $table->unsignedSmallInteger('reprint_count')->default(0);
-            $table->timestamp('completed_at')->index();
+            $table->dateTime('completed_at')->index();
             $table->timestamps();
 
             $table->index(['terminal_id', 'completed_at']);
@@ -177,8 +177,8 @@ return new class extends Migration
             $table->string('type', 1);
             $table->string('number', 40)->unique();
             $table->unsignedInteger('z_counter');
-            $table->timestamp('period_start');
-            $table->timestamp('period_end');
+            $table->dateTime('period_start');
+            $table->dateTime('period_end');
             $table->decimal('grand_total_before', 16, 2);
             $table->decimal('grand_total_after', 16, 2);
             $table->json('data');
