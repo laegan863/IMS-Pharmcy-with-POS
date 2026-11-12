@@ -28,6 +28,10 @@ class RolesAndPermissionsSeeder extends Seeder
 
         PermissionModel::query()->whereNotIn('name', $names)->delete();
 
+        // Model events may be muted (WithoutModelEvents), so clear the cache by hand
+        // before roles look the new permissions up.
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         foreach (Role::cases() as $role) {
             RoleModel::findOrCreate($role->value, 'web')
                 ->syncPermissions(array_map(fn (Permission $permission) => $permission->value, $role->permissions()));
