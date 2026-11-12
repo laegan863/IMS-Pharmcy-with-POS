@@ -37,6 +37,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property StorageCondition $storage_condition
  * @property int $reorder_point
  * @property int|null $max_level
+ * @property string $average_cost Moving average cost per base unit, set only by StockService.
  * @property string|null $description
  * @property bool $is_active
  * @property CarbonImmutable|null $created_at
@@ -158,6 +159,7 @@ class Product extends Model
             'statutory_discount_eligible' => 'boolean',
             'reorder_point' => 'integer',
             'max_level' => 'integer',
+            'average_cost' => 'decimal:4',
             'is_active' => 'boolean',
         ];
     }

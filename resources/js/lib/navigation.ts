@@ -1,6 +1,7 @@
 import type { InertiaLinkProps } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
 import {
+    Boxes,
     Building2,
     ContactRound,
     LayoutGrid,
@@ -22,6 +23,7 @@ import { index as lookups } from '@/routes/catalog/lookups';
 import { index as prescribers } from '@/routes/catalog/prescribers';
 import { index as products } from '@/routes/catalog/products';
 import { index as suppliers } from '@/routes/catalog/suppliers';
+import { index as stock } from '@/routes/stock';
 
 export type AppNavItem = {
     title: string;
@@ -44,6 +46,17 @@ export const navigation: AppNavSection[] = [
     {
         title: 'Overview',
         items: [{ title: 'Dashboard', href: dashboard(), icon: LayoutGrid }],
+    },
+    {
+        title: 'Inventory',
+        items: [
+            {
+                title: 'Stock on hand',
+                href: stock(),
+                icon: Boxes,
+                permission: 'stock.view',
+            },
+        ],
     },
     {
         title: 'Catalog',

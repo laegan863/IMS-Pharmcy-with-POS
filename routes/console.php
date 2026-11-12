@@ -16,3 +16,6 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('backup:clean')->dailyAt('01:00')->withoutOverlapping();
 Schedule::command('backup:run')->dailyAt('01:30')->withoutOverlapping();
 Schedule::command('backup:monitor')->dailyAt('07:00');
+
+// Every balance must equal the sum of its movements.
+Schedule::command('stock:verify-ledger')->dailyAt('02:30');
